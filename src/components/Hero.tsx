@@ -211,7 +211,12 @@ export default function Hero() {
           <a href="#login" aria-label="Login" className="hidden rounded-full p-2 text-white transition hover:bg-white/10 hover:text-primary sm:inline-flex">
             <User size={18} />
           </a>
-          <a href="https://wa.me/910000000000" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 rounded-full bg-green-600 px-4 py-2 text-sm font-medium text-green-100 transition hover:brightness-105">
+          <a
+            href="https://wa.me/919120435950"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 rounded-full bg-[#25D366] px-4 py-2 text-sm font-medium text-[#062910] transition hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+          >
             <MessageCircle size={16} />
             <span className="hidden sm:inline">WhatsApp</span>
           </a>
@@ -250,12 +255,13 @@ export default function Hero() {
             href="#collections"
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.98 }}
-            className="flex items-center gap-2 rounded-full bg-primary px-7 py-3 text-sm font-semibold text-neutral-dark shadow-lg transition hover:brightness-105"
+            className="flex items-center gap-2 rounded-full bg-gradient-to-r from-[#C9A24B] to-[#E8CD8B] px-7 py-3 text-sm font-semibold text-[#1A1508] shadow-[0_8px_30px_-8px_rgba(201,162,75,0.6)] transition hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
           >
-            Explore Collection <span aria-hidden>→</span>
+            Explore Collection
+            <span aria-hidden>→</span>
           </motion.a>
           <motion.a
-            href="https://wa.me/910000000000"
+            href="https://wa.me/919120435950"
             target="_blank"
             rel="noopener noreferrer"
             whileHover={{ scale: 1.03 }}

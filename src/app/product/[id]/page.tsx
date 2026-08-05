@@ -50,7 +50,7 @@ export default function ProductPage({
     if (!product) return;
 
     const message = `Hi, I would like to know more about ${product.name} (Qty: ${quantity}).`;
-    window.open(`https://wa.me/919984979720?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
+    window.open(`https://wa.me/919120435950?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
   }
 
   useEffect(() => {

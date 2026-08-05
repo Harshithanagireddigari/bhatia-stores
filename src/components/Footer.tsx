@@ -8,7 +8,7 @@ export default function Footer() {
           <span>&middot;</span>
           <span>Secure Payments</span>
           <span>&middot;</span>
-          <a href="https://wa.me/919984979720" className="hover:text-primary">WhatsApp Support</a>
+          <a href="https://wa.me/919120435950" className="hover:text-primary">WhatsApp Support</a>
         </div>
       </div>
     </footer>
