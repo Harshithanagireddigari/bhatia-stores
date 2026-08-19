@@ -126,7 +126,9 @@ function ShopContent() {
       ) : (
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
+            <Link key={product.id} href={`/product/${product.id}`} className="block hover:shadow-lg transition-shadow duration-300">
+              <ProductCard key={product.id} product={product} />
+            </Link>
           ))}
         </div>
       )}
