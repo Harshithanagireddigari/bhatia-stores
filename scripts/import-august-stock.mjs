@@ -62,7 +62,7 @@ try {
       name: `Loyal 400x400 Tile - ${design}`,
       description: `400x400 Loyal ceramic tile design ${design}. Stock imported from the supplied July 2026 stock report.`,
       price: "800.00",
-      image: "🏷️",
+      image: "/products/catalog/bhatia-catalogue-01.jpg",
       category: "Tiles & Sanitaryware",
       stock,
     });
