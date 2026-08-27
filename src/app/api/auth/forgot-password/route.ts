@@ -1,22 +1,32 @@
 import { NextResponse } from "next/server";
-import { getUserByEmail } from "@/lib/auth";
-import { createOtpChallenge } from "@/lib/otp";
+import { createPasswordResetToken } from "@/lib/auth";
+import { isRateLimited } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
   try {
+    if (await isRateLimited(req, "forgot_password", 5, 15 * 60_000)) {
+      return NextResponse.json({ error: "Too many reset attempts. Please try again later." }, { status: 429 });
+    }
+
     const { email } = await req.json();
-    if (!email) {
-      return NextResponse.json({ error: "Email is required" }, { status: 400 });
+    if (!email || typeof email !== "string") {
+      return NextResponse.json({ error: "Email is required." }, { status: 400 });
     }
-    const user = await getUserByEmail(email);
-    if (!user) {
-      // Do not reveal whether the email exists for security.
-      return NextResponse.json({ success: true });
+
+    const token = await createPasswordResetToken(email);
+
+    if (token) {
+      const resetLink = `/reset-password?token=${token}`;
+      console.log(`[Security] Password reset requested for ${email}. Secure Link: ${resetLink}`);
     }
-    await createOtpChallenge(email);
-    return NextResponse.json({ success: true });
-  } catch (e) {
-    console.error(e);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+
+    // Always respond with success so email existence is not exposed
+    return NextResponse.json({
+      success: true,
+      message: "If an account exists with this email address, a password reset link has been dispatched.",
+    });
+  } catch (error) {
+    console.error("Forgot password error:", error);
+    return NextResponse.json({ error: "Server error occurred. Please try again." }, { status: 500 });
   }
 }

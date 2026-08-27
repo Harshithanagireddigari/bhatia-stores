@@ -2,373 +2,409 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Fraunces, Inter } from "next/font/google";
+import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  Sparkles,
+  ArrowRight,
+  MessageCircle,
+  Truck,
+  ShieldCheck,
+  Star,
+  Layers,
   Bath,
-  ChevronDown,
   Droplets,
   Heart,
-  LayoutGrid,
-  MessageCircle,
-  ShieldCheck,
   ShoppingCart,
-  Star,
-  Truck,
-  User,
 } from "lucide-react";
-
-// Font setup – using the newly added Inter (body) and Poppins (display) fonts.
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-display",
-});
-
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-body",
-});
-
-const ROTATE_MS = 6000;
-
-const CATEGORIES = [
-  {
-    id: "marble",
-    label: "Marble Look",
-    count: "Tile Collection",
-    icon: LayoutGrid,
-    image: "/products/catalog/bhatia-catalogue-02.jpg",
-    eyebrow: "The 2026 Tile Edit",
-    headlineTop: "Crafting Beautiful Homes,",
-    headlineAccent: "one tile at a time.",
-    copy: "Marble-look porcelain, handcrafted mosaics, and large-format slabs — laid by our own tiling crews, not a subcontractor.",
-    highlights: [
-      { name: "Luca White Marble", price: "₹89/sq.ft", rating: 4.8 },
-      { name: "Matrix Galaxy", price: "₹72/sq.ft", rating: 4.7 },
-    ],
-  },
-  {
-    id: "contemporary",
-    label: "Modern Tiles",
-    count: "Tile Collection",
-    icon: Bath,
-    image: "/products/catalog/bhatia-catalogue-05.jpg",
-    eyebrow: "The 2026 Tile Edit",
-    headlineTop: "Give Every Room",
-    headlineAccent: "a signature surface.",
-    copy: "Discover contemporary tile designs with durable finishes, made for kitchens, living spaces, and bathrooms.",
-    highlights: [
-      { name: "Wall-Hung Basin", price: "₹6,499", rating: 4.9 },
-      { name: "Rimless WC Suite", price: "₹11,299", rating: 4.8 },
-    ],
-  },
-  {
-    id: "statement",
-    label: "Statement Walls",
-    count: "Tile Collection",
-    icon: Droplets,
-    image: "/products/catalog/gnam-wall-06.jpg",
-    eyebrow: "The 2026 Wall Tile Edit",
-    headlineTop: "Make Your Walls",
-    headlineAccent: "the centre of attention.",
-    copy: "Brass-bodied faucets in brushed gold, matte black, and polished chrome — built to outlast the renovation around them.",
-    highlights: [
-      { name: "Brushed Gold Faucet", price: "₹3,999", rating: 4.9 },
-      { name: "Matte Black Mixer", price: "₹4,499", rating: 4.7 },
-    ],
-  },
-] as const;
-
-function RatingStars({ rating }: { rating: number }) {
-  return (
-    <div className="flex items-center gap-0.5">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <Star
-          key={i}
-          size={10}
-          className={i < Math.round(rating) ? "fill-primary-500 text-primary-500" : "text-neutral-300"}
-        />
-      ))}
-    </div>
-  );
-}
-
 import { useCart } from "@/components/CartContext";
 import { useWishlist } from "@/components/WishlistContext";
+import { toast } from "sonner";
+
+interface SlideItem {
+  id: string;
+  label: string;
+  category: string;
+  eyebrow: string;
+  headline: string;
+  headlineAccent: string;
+  copy: string;
+  image: string;
+  ctaText: string;
+  ctaLink: string;
+  highlights: Array<{
+    id: string;
+    name: string;
+    price: number;
+    priceFormatted: string;
+    rating: number;
+    image: string;
+  }>;
+}
+
+const DEFAULT_SLIDES: SlideItem[] = [
+  {
+    id: "pgvt",
+    label: "PGVT Glazed Slabs",
+    category: "Vitrified Floor Tiles",
+    eyebrow: "The 2026 Surface Edit",
+    headline: "Architectural Grandeur in",
+    headlineAccent: "Every Living Space.",
+    copy: "Large-format 600x1200 mm PGVT vitrified porcelain slabs featuring Italian Statuario, Calacatta Gold, and Nero Marquina veins. Nano-polished, scratch-proof, and designed for timeless elegance.",
+    image: "/products/new-stock/pgvt-01.jpg",
+    ctaText: "Explore Collection",
+    ctaLink: "/shop?category=Vitrified+Floor+Tiles",
+    highlights: [
+      {
+        id: "hero-pgvt-1",
+        name: "PGVT Calacatta Gold Slab",
+        price: 1350,
+        priceFormatted: "₹1,350/box",
+        rating: 4.9,
+        image: "/products/new-stock/pgvt-01.jpg",
+      },
+      {
+        id: "hero-pgvt-2",
+        name: "Statuario Venato Slab",
+        price: 1420,
+        priceFormatted: "₹1,420/box",
+        rating: 4.9,
+        image: "/products/new-stock/pgvt-02.jpg",
+      },
+    ],
+  },
+  {
+    id: "double-charge",
+    label: "Double Charge Vitrified",
+    category: "Double Charge",
+    eyebrow: "High-Traffic Strength",
+    headline: "Engineered for Enduring",
+    headlineAccent: "Strength & Mirror Shine.",
+    copy: "Heavy-duty 600x600 mm double-charge vitrified flooring. 4mm wear layer engineered to withstand commercial foot traffic, resistance to heavy wear, and anti-bacterial zero-porosity finish.",
+    image: "/products/new-stock/gnam-dc-01.jpg",
+    ctaText: "View Double Charge Tiles",
+    ctaLink: "/shop?category=Double+Charge",
+    highlights: [
+      {
+        id: "hero-dc-1",
+        name: "SunCore Matrix Opal DC",
+        price: 1650,
+        priceFormatted: "₹1,650/box",
+        rating: 4.9,
+        image: "/products/new-stock/gnam-dc-01.jpg",
+      },
+      {
+        id: "hero-dc-2",
+        name: "Crystal Beige DC Tile",
+        price: 1680,
+        priceFormatted: "₹1,680/box",
+        rating: 4.8,
+        image: "/products/new-stock/gnam-dc-02.jpg",
+      },
+    ],
+  },
+  {
+    id: "sanitaryware",
+    label: "Italian Sanitaryware",
+    category: "Sanitaryware & Faucets",
+    eyebrow: "Luxury Bath Edit",
+    headline: "Sculpted Ceramics &",
+    headlineAccent: "Designer Brassware.",
+    copy: "Transform master bathrooms into private spa sanctuaries with Italian rimless wall-hung WC suites, countertop vessel wash basins, and PVD brushed gold brassware faucets.",
+    image: "/products/catalog/hindware-01.jpg",
+    ctaText: "Explore Sanitaryware",
+    ctaLink: "/shop?category=Sanitaryware+%26+Faucets",
+    highlights: [
+      {
+        id: "hero-san-1",
+        name: "Hindware Rimless Wall WC",
+        price: 8990,
+        priceFormatted: "₹8,990",
+        rating: 4.9,
+        image: "/products/catalog/hindware-01.jpg",
+      },
+      {
+        id: "hero-san-2",
+        name: "Brushed Gold Tall Basin Mixer",
+        price: 4200,
+        priceFormatted: "₹4,200",
+        rating: 4.9,
+        image: "/products/catalog/hindware-07.jpg",
+      },
+    ],
+  },
+];
+
+const ROTATE_INTERVAL = 7000;
+
 export default function Hero() {
-  const [mounted, setMounted] = useState(false);
+  const [slides, setSlides] = useState<SlideItem[]>(DEFAULT_SLIDES);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [hasInteracted, setHasInteracted] = useState(false);
-  // Cart & Wishlist actions for floating product cards
+  const [isPaused, setIsPaused] = useState(false);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
   const { addItem } = useCart();
   const { toggleItem, hasItem } = useWishlist();
 
-  const handleAddToCart = (product: any) => {
-    addItem({
-      productId: product.id,
-      name: product.name,
-      price: parseFloat(product.price.replace(/[^0-9.]/g, "")),
-      image: product.image,
-      quantity: 1,
-    });
-  };
-
-  const handleToggleWishlist = (product: any) => {
-    toggleItem({
-      productId: product.id,
-      name: product.name,
-      price: parseFloat(product.price.replace(/[^0-9.]/g, "")),
-      image: product.image,
-      quantity: 1,
-    });
-  };
-
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const active = CATEGORIES[activeIndex];
-
-  useEffect(() => setMounted(true), []);
-
-  const startRotation = () => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    intervalRef.current = setInterval(() => {
-      setHasInteracted(true);
-      setActiveIndex((i) => (i + 1) % CATEGORIES.length);
-    }, ROTATE_MS);
-  };
-
-  const pauseRotation = () => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
-  };
-
+  // Load custom launchpad slides if configured
   useEffect(() => {
-    startRotation();
+    fetch("/api/launchpad")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data?.slides) && data.slides.length > 0) {
+          const activeDbSlides = data.slides.filter((s: any) => s.active === 1);
+          if (activeDbSlides.length > 0) {
+            const mapped: SlideItem[] = activeDbSlides.map((s: any, idx: number) => ({
+              id: s.id,
+              label: s.title,
+              category: "Tiles & Sanitaryware",
+              eyebrow: s.eyebrow || "The 2026 Surface Edit",
+              headline: s.title,
+              headlineAccent: "",
+              copy: s.subtitle,
+              image: s.image,
+              ctaText: s.ctaText || "Explore Products",
+              ctaLink: s.ctaLink || "/shop",
+              highlights: DEFAULT_SLIDES[idx % DEFAULT_SLIDES.length].highlights,
+            }));
+            setSlides(mapped);
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // Slide rotation logic
+  useEffect(() => {
+    if (isPaused || slides.length <= 1) return;
+
+    intervalRef.current = setInterval(() => {
+      setActiveIndex((prev) => (prev + 1) % slides.length);
+    }, ROTATE_INTERVAL);
+
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isPaused, slides.length]);
 
-  function handleSelectCategory(index: number) {
-    setHasInteracted(true);
-    setActiveIndex(index);
-    startRotation();
-  }
+  const currentSlide = slides[activeIndex] || DEFAULT_SLIDES[0];
+
+  const handleAddToCart = (item: any) => {
+    addItem({
+      productId: item.id,
+      name: item.name,
+      price: item.price,
+      image: item.image,
+      quantity: 1,
+    });
+    toast.success(`Added "${item.name}" to cart`);
+  };
+
+  const handleToggleWishlist = (item: any) => {
+    toggleItem({
+      productId: item.id,
+      name: item.name,
+      price: item.price,
+      image: item.image,
+      quantity: 1,
+    });
+  };
 
   return (
     <section
-      className={`${fraunces.variable} ${inter.variable} relative h-screen min-h-[760px] w-full overflow-hidden bg-neutral-dark font-[var(--font-body)]`}
+      className="relative min-h-[660px] lg:min-h-[720px] w-full overflow-hidden bg-stone-950 text-white"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
     >
-      {/* Rotating background image */}
+      {/* Background Image with Smooth Crossfade Animation */}
       <div className="absolute inset-0">
         <AnimatePresence mode="wait">
           <motion.div
-            key={active.id}
-            initial={{ opacity: 0, scale: 1 }}
-            animate={{ opacity: 1, scale: 1.12 }}
+            key={currentSlide.id}
+            initial={{ opacity: 0, scale: 1.04 }}
+            animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
-            transition={{
-              opacity: { duration: 1 },
-              scale: { duration: ROTATE_MS / 1000 + 1, ease: "linear" },
-            }}
+            transition={{ duration: 0.9, ease: "easeInOut" }}
             className="absolute inset-0"
           >
-            <Image src={active.image} alt={active.label} fill className="object-cover object-center" priority={activeIndex === 0 && !hasInteracted} />
+            <Image
+              src={currentSlide.image}
+              alt={currentSlide.headline}
+              fill
+              className="object-cover object-center"
+              priority
+            />
           </motion.div>
         </AnimatePresence>
-        {/* Dark overlay with subtle primary tint */}
-        <div className="absolute inset-0 bg-gradient-to-r from-neutral-dark/90 via-neutral-dark/60 to-neutral-dark/20" />
-        <div className="absolute inset-0 bg-gradient-to-t from-neutral-dark/70 via-transparent to-neutral-dark/10" />
+
+        {/* Sophisticated Dark Gradient Overlays for Luxury Contrast */}
+        <div className="absolute inset-0 bg-gradient-to-r from-stone-950/92 via-stone-950/70 to-stone-950/30" />
+        <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-transparent to-stone-950/40" />
       </div>
 
-      {/* Glass‑style header replaces previous navbar */}
-      <motion.header
-        initial={{ y: -16, opacity: 0 }}
-        animate={mounted ? { y: 0, opacity: 1 } : {}}
-        transition={{ duration: 0.6 }}
-        className="absolute inset-x-0 top-6 z-30 mx-auto flex w-[94%] max-w-6xl items-center justify-between gap-4 rounded-full border border-white/10 bg-white/[0.06] px-5 py-3 backdrop-blur-xl"
-      >
-        <span className="font-[var(--font-display)] text-lg tracking-[0.18em] text-white">BHATIA</span>
-        <nav className="hidden items-center gap-6 text-sm text-white lg:flex">
-          <a href="#collections" className="rounded-sm transition hover:text-primary">Collections</a>
-          <a href="#new-arrivals" className="rounded-sm transition hover:text-primary">New Arrivals</a>
-          <a href="#brands" className="rounded-sm transition hover:text-primary">Brands</a>
-          <a href="#offers" className="rounded-sm transition hover:text-primary">Offers</a>
-          <a href="#contact" className="rounded-sm transition hover:text-primary">Contact</a>
-        </nav>
-        <div className="flex items-center gap-2 sm:gap-3">
-          <a href="#wishlist" aria-label="Wishlist" className="rounded-full p-2 text-white transition hover:bg-white/10 hover:text-primary">
-            <Heart size={18} />
-          </a>
-          <a href="#cart" aria-label="Cart" className="relative rounded-full p-2 text-white transition hover:bg-white/10 hover:text-primary">
-            <ShoppingCart size={18} />
-            <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-neutral-dark">
-              0
-            </span>
-          </a>
-          <a href="#login" aria-label="Login" className="hidden rounded-full p-2 text-white transition hover:bg-white/10 hover:text-primary sm:inline-flex">
-            <User size={18} />
-          </a>
-          <a href="https://wa.me/910000000000" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 rounded-full bg-green-600 px-4 py-2 text-sm font-medium text-green-100 transition hover:brightness-105">
-            <MessageCircle size={16} />
-            <span className="hidden sm:inline">WhatsApp</span>
-          </a>
-        </div>
-      </motion.header>
+      {/* Main Hero Content Area */}
+      <div className="relative z-10 mx-auto flex min-h-[660px] lg:min-h-[720px] max-w-7xl flex-col justify-between px-4 py-12 sm:px-6 lg:py-16">
+        {/* Top spacer */}
+        <div />
 
-      {/* Hero copy */}
-      <div className="relative z-20 flex h-full max-w-2xl flex-col justify-center gap-5 px-6 md:px-16">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={active.id}
-            initial={{ y: 16, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -12, opacity: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className="flex flex-col gap-5"
-          >
-            <div className="flex items-center gap-3">
-              <span className="h-px w-8 bg-primary" />
-              <span className="text-xs font-medium uppercase tracking-[0.28em] text-primary">{active.eyebrow}</span>
-            </div>
-            <h1 className="font-[var(--font-display)] text-4xl leading-[1.08] text-white sm:text-5xl md:text-6xl">
-              {active.headlineTop}<br />
-              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{active.headlineAccent}</span>
-            </h1>
-            <p className="max-w-md text-base text-neutral-300 md:text-lg">{active.copy}</p>
-          </motion.div>
-        </AnimatePresence>
-        <motion.div
-          initial={{ y: 12, opacity: 0 }}
-          animate={mounted ? { y: 0, opacity: 1 } : {}}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="flex flex-wrap items-center gap-4"
-        >
-          <motion.a
-            href="#collections"
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.98 }}
-            className="flex items-center gap-2 rounded-full bg-primary px-7 py-3 text-sm font-semibold text-neutral-dark shadow-lg transition hover:brightness-105"
-          >
-            Explore Collection <span aria-hidden>→</span>
-          </motion.a>
-          <motion.a
-            href="https://wa.me/910000000000"
-            target="_blank"
-            rel="noopener noreferrer"
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.98 }}
-            className="flex items-center gap-2 rounded-full border border-white/25 bg-white/[0.04] px-7 py-3 text-sm font-medium text-white backdrop-blur-md transition hover:bg-white/10"
-          >
-            <MessageCircle size={16} /> Get Quote on WhatsApp
-          </motion.a>
-        </motion.div>
-        {/* Trust badges */}
-        <motion.div
-          initial={{ y: 10, opacity: 0 }}
-          animate={mounted ? { y: 0, opacity: 1 } : {}}
-          transition={{ duration: 0.6, delay: 0.45 }}
-          className="flex flex-wrap items-center gap-5 pt-1 text-xs text-neutral-300"
-        >
-          <span className="flex items-center gap-1.5"><Star size={13} className="fill-primary text-primary" /> 4.9 Rating</span>
-          <span className="flex items-center gap-1.5"><Truck size={14} /> Fast Delivery</span>
-          <span className="flex items-center gap-1.5"><ShieldCheck size={14} /> Secure Checkout</span>
-          <span className="flex items-center gap-1.5"><MessageCircle size={14} /> WhatsApp Support</span>
-        </motion.div>
-      </div>
-
-      {/* Floating product cards */}
-      <div className="absolute right-8 top-28 z-20 hidden gap-4 lg:flex">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={active.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="flex gap-4"
-          >
-            {active.highlights.map((product, i) => (
+        {/* Center Hero Copy & CTAs */}
+        <div className="grid gap-12 lg:grid-cols-12 lg:items-center">
+          <div className="lg:col-span-8 max-w-2xl">
+            <AnimatePresence mode="wait">
               <motion.div
-                key={product.name}
-                animate={{ y: [0, -6, 0] }}
-                transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut", delay: i * 0.4 }}
-                className="w-[168px] rounded-2xl border border-white/10 bg-white/[0.07] p-3 backdrop-blur-xl"
+                key={currentSlide.id}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.5 }}
+                className="space-y-4"
               >
-                <div className="flex items-center justify-between">
-                  <active.icon size={16} className="text-primary" />
-                  <button type="button" aria-label={`Add ${product.name} to wishlist`} onClick={() => handleToggleWishlist(product)} className="rounded-full p-1 text-neutral-300 transition hover:bg-white/10 hover:text-primary">
-                    <Heart size={13} />
-                  </button>
+                {/* Eyebrow badge */}
+                <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-3.5 py-1 text-xs font-medium uppercase tracking-[0.2em] text-amber-300 backdrop-blur-md">
+                  <Sparkles size={12} className="text-amber-400" />
+                  <span>{currentSlide.eyebrow}</span>
                 </div>
-                <p className="mt-2 text-xs font-medium leading-tight text-white">{product.name}</p>
-                <div className="mt-1 flex items-center gap-1.5">
-                  <RatingStars rating={product.rating} />
-                  <span className="text-[10px] text-neutral-400">{product.rating}</span>
-                </div>
-                <div className="mt-2 flex items-center justify-between">
-                  <span className="font-[var(--font-display)] text-sm text-primary">{product.price}</span>
-                  <button type="button" aria-label={`Add ${product.name} to cart`} className="rounded-full bg-white/10 p-1.5 text-white transition hover:bg-primary hover:text-neutral-dark">
-                    <ShoppingCart size={13} />
-                  </button>
+
+                {/* Main Headline */}
+                <h1 className="font-serif text-3xl leading-[1.12] sm:text-5xl lg:text-6xl font-bold tracking-tight text-white">
+                  {currentSlide.headline}{" "}
+                  {currentSlide.headlineAccent && (
+                    <span className="bg-gradient-to-r from-amber-200 via-amber-300 to-amber-100 bg-clip-text text-transparent">
+                      {currentSlide.headlineAccent}
+                    </span>
+                  )}
+                </h1>
+
+                {/* Subtitle / Description */}
+                <p className="text-sm sm:text-base leading-relaxed text-stone-300/90 max-w-xl">
+                  {currentSlide.copy}
+                </p>
+              </motion.div>
+            </AnimatePresence>
+
+            {/* CTA Buttons */}
+            <div className="mt-8 flex flex-wrap items-center gap-4">
+              <Link
+                href={currentSlide.ctaLink}
+                className="group flex items-center gap-2 rounded-full bg-amber-600 px-7 py-3.5 text-xs sm:text-sm font-semibold text-white shadow-xl transition-all hover:bg-amber-500 hover:shadow-amber-600/30 active:scale-95"
+              >
+                <span>{currentSlide.ctaText}</span>
+                <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
+              </Link>
+
+              <a
+                href="https://wa.me/919984979720?text=Hello%20Bhatia%20Stores,%20I%20would%20like%20a%20quote%20and%20catalogue%20for%20tiles%20and%20sanitaryware."
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-6 py-3.5 text-xs sm:text-sm font-medium text-white backdrop-blur-md transition hover:bg-white/20"
+              >
+                <MessageCircle size={16} className="text-emerald-400" />
+                <span>WhatsApp Enquiry / Quote</span>
+              </a>
+            </div>
+
+            {/* Trust Badges */}
+            <div className="mt-10 flex flex-wrap items-center gap-5 border-t border-white/10 pt-6 text-xs text-stone-300">
+              <span className="flex items-center gap-1.5">
+                <Truck size={14} className="text-amber-400" /> Fast Regional Dispatch
+              </span>
+              <span className="flex items-center gap-1.5">
+                <ShieldCheck size={14} className="text-amber-400" /> 100% Quality Inspected
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Star size={14} className="text-amber-400 fill-amber-400" /> 4.9 Showroom Rating
+              </span>
+              <span className="flex items-center gap-1.5">
+                <MessageCircle size={14} className="text-amber-400" /> Direct WhatsApp Support
+              </span>
+            </div>
+          </div>
+
+          {/* Floating Product Highlight Cards (Right side) */}
+          <div className="hidden lg:col-span-4 lg:flex flex-col gap-4">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentSlide.id}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.5 }}
+                className="space-y-3"
+              >
+                <div className="rounded-2xl border border-white/15 bg-stone-900/65 p-4 backdrop-blur-xl shadow-2xl">
+                  <div className="mb-3 flex items-center justify-between border-b border-white/10 pb-2">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-amber-300">
+                      Showroom Highlights
+                    </span>
+                    <span className="text-[11px] text-stone-400">Direct Delivery</span>
+                  </div>
+
+                  <div className="space-y-3">
+                    {currentSlide.highlights.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between gap-3 rounded-xl bg-white/5 p-2.5 transition hover:bg-white/10"
+                      >
+                        <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-stone-800">
+                          <Image src={item.image} alt={item.name} fill className="object-cover" />
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <p className="truncate text-xs font-medium text-white">{item.name}</p>
+                          <div className="mt-0.5 flex items-center gap-1 text-[11px] text-amber-300">
+                            <Star size={11} className="fill-current" />
+                            <span>{item.rating}</span>
+                            <span className="text-stone-400 font-normal">| {item.priceFormatted}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleWishlist(item)}
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-stone-400 hover:bg-white/10 hover:text-amber-400"
+                            aria-label="Wishlist"
+                          >
+                            <Heart size={14} className={hasItem(item.id) ? "fill-amber-400 text-amber-400" : ""} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleAddToCart(item)}
+                            className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-white hover:bg-amber-600"
+                            aria-label="Add to cart"
+                          >
+                            <ShoppingCart size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </motion.div>
-            ))}
-          </motion.div>
-        </AnimatePresence>
-      </div>
-
-      {/* Category selector */}
-      <motion.div
-        initial={{ y: 16, opacity: 0 }}
-        animate={mounted ? { y: 0, opacity: 1 } : {}}
-        transition={{ duration: 0.6, delay: 0.5 }}
-        onMouseEnter={pauseRotation}
-        onMouseLeave={startRotation}
-        onFocus={pauseRotation}
-        onBlur={startRotation}
-        className="absolute bottom-8 right-6 z-20 w-[min(90vw,340px)] rounded-2xl border border-white/10 bg-white/[0.06] p-5 backdrop-blur-xl md:bottom-12 md:right-16"
-      >
-        <p className="text-xs uppercase tracking-[0.2em] text-neutral-500">Shop by Category</p>
-        <div className="mt-3 flex gap-2">
-          {CATEGORIES.map((category, index) => {
-            const Icon = category.icon;
-            const isActive = active.id === category.id;
-            return (
-              <motion.button
-                key={category.id}
-                type="button"
-                onClick={() => handleSelectCategory(index)}
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.97 }}
-                aria-pressed={isActive}
-                className={`flex flex-1 flex-col items-center gap-1 rounded-xl border px-2 py-3 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ${
-                  isActive ? "border-primary bg-primary/10" : "border-white/10 bg-white/[0.02] hover:border-white/25"
-                }`}
-              >
-                <Icon size={20} className={isActive ? "text-primary" : "text-neutral-300"} />
-                <span className="text-[11px] leading-tight text-white">{category.label}</span>
-                <span className="text-[9px] text-neutral-400">{category.count}</span>
-              </motion.button>
-            );
-          })}
+            </AnimatePresence>
+          </div>
         </div>
-      </motion.div>
 
-      {/* Scroll indicator */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={mounted ? { opacity: 1 } : {}}
-        transition={{ duration: 0.6, delay: 0.8 }}
-        className="absolute bottom-6 left-1/2 z-20 hidden -translate-x-1/2 flex-col items-center gap-1 text-[10px] uppercase tracking-[0.2em] text-neutral-500 xl:flex"
-      >
-        <span>Scroll to Explore</span>
-        <motion.div animate={{ y: [0, 6, 0] }} transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}>
-          <ChevronDown size={16} />
-        </motion.div>
-      </motion.div>
+        {/* Bottom Slide Switcher Tabs */}
+        <div className="mt-8 flex flex-wrap items-center gap-2 border-t border-white/10 pt-4">
+          <span className="text-xs font-medium text-stone-400 mr-2 uppercase tracking-wider">
+            Explore:
+          </span>
+          {slides.map((s, idx) => (
+            <button
+              key={s.id}
+              onClick={() => setActiveIndex(idx)}
+              className={`rounded-full px-4 py-1.5 text-xs font-medium transition-all ${
+                activeIndex === idx
+                  ? "bg-amber-500 text-stone-950 font-semibold shadow-md"
+                  : "bg-white/5 text-stone-300 hover:bg-white/15"
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </div>
     </section>
   );
 }

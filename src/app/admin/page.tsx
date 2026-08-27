@@ -2,369 +2,320 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { toast } from "sonner";
+import {
+  DollarSign,
+  ShoppingCart,
+  Users,
+  Package,
+  TrendingUp,
+  AlertTriangle,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  Plus,
+  Rocket,
+  Settings,
+  BarChart3,
+  ArrowRight,
+  Truck,
+} from "lucide-react";
 
-interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: string;
-  image: string;
-  category: string;
-  stock: number;
-}
-
-export default function AdminProductsPage() {
-  const [products, setProducts] = useState<Product[]>([]);
+export default function AdminDashboardPage() {
+  const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [editing, setEditing] = useState<Product | null>(null);
-  const [form, setForm] = useState({
-    name: "",
-    description: "",
-    price: "",
-    image: "",
-    category: "Electronics",
-    stock: "10",
-  });
-  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    fetchProducts();
+    async function fetchDashboardData() {
+      setLoading(true);
+      try {
+        const res = await fetch("/api/analytics?range=30days");
+        if (res.ok) {
+          const json = await res.json();
+          setData(json);
+        }
+      } catch (err) {
+        console.error("Dashboard analytics error:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchDashboardData();
   }, []);
 
-  async function fetchProducts() {
-    try {
-      const res = await fetch("/api/products");
-      const data = await res.json();
-      setProducts(Array.isArray(data) ? data : []);
-    } catch {
-      // ignore
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function resetForm() {
-    setForm({ name: "", description: "", price: "", image: "", category: "Electronics", stock: "10" });
-    setEditing(null);
-    setShowForm(false);
-  }
-
-  function startEdit(product: Product) {
-    setEditing(product);
-    setForm({
-      name: product.name,
-      description: product.description,
-      price: product.price,
-      image: product.image,
-      category: product.category,
-      stock: product.stock.toString(),
-    });
-    setShowForm(true);
-  }
-
-  async function handleImageChange(
-    e: React.ChangeEvent<HTMLInputElement>
-  ) {
-    const file = e.target.files?.[0];
-
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      toast.loading("Uploading image...", {
-        id: "upload",
-      });
-
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Upload failed");
-      }
-
-      setForm((prev) => ({
-        ...prev,
-        image: data.imageUrl,
-      }));
-
-      toast.success("Image uploaded successfully!", {
-        id: "upload",
-      });
-    } catch (error: any) {
-      console.error(error);
-
-      toast.error(error?.message || "Image upload failed", {
-        id: "upload",
-      });
-    }
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!form.name || !form.description || !form.price) {
-      toast.error("Name, description, and price are required");
-      return;
-    }
-    setSaving(true);
-
-    try {
-      if (editing) {
-        const res = await fetch(`/api/products/${editing.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(form),
-        });
-        if (!res.ok) throw new Error();
-        toast.success("Product updated!");
-      } else {
-        const res = await fetch("/api/products", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(form),
-        });
-        if (!res.ok) throw new Error();
-        toast.success("Product created!");
-      }
-      resetForm();
-      fetchProducts();
-    } catch {
-      toast.error("Failed to save product");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function deleteProduct(id: string) {
-    if (!confirm("Are you sure you want to delete this product?")) return;
-    try {
-      const res = await fetch(`/api/products/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error();
-      toast.success("Product deleted!");
-      fetchProducts();
-    } catch {
-      toast.error("Failed to delete product");
-    }
-  }
-
-  const categories = ["Electronics", "Clothing", "Home & Kitchen", "Books", "Sports", "Beauty"];
-
-  return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <Link
-            href="/admin"
-            className="text-sm text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400"
-          >
-            ← Back to Dashboard
-          </Link>
-          <h1 className="mt-1 text-3xl font-bold text-gray-900 dark:text-white">
-            Manage Products
-          </h1>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link
-            href="/admin/orders"
-            className="rounded-full border border-indigo-200 px-5 py-2.5 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-300 dark:hover:bg-indigo-950"
-          >
-            Manage Orders
-          </Link>
-          <button
-            onClick={() => {
-              resetForm();
-              setShowForm(!showForm);
-            }}
-            className="rounded-full bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700"
-          >
-            {showForm ? "Cancel" : "+ Add Product"}
-          </button>
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+        <div className="animate-pulse space-y-6">
+          <div className="h-8 w-64 rounded-lg bg-stone-200 dark:bg-stone-800" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-28 rounded-2xl bg-stone-200 dark:bg-stone-800" />
+            ))}
+          </div>
         </div>
       </div>
+    );
+  }
 
-      {/* Add/Edit Form */}
-      {showForm && (
-        <form
-          onSubmit={handleSubmit}
-          className="mt-8 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800"
-        >
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            {editing ? "Edit Product" : "New Product"}
-          </h2>
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Name *</label>
-              <input
-                type="text"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                required
-                className="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Price (₹) *</label>
-              <input
-                type="number"
-                step="0.01"
-                value={form.price}
-                onChange={(e) => setForm({ ...form, price: e.target.value })}
-                required
-                className="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-              />
-            </div>
+  const kpis = data?.kpis || {
+    totalRevenue: 0,
+    totalOrders: 0,
+    totalCustomers: 0,
+    totalProducts: 0,
+    averageOrderValue: 0,
+  };
 
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Description *
-              </label>
-              <textarea
-                value={form.description}
-                onChange={(e) =>
-                  setForm({ ...form, description: e.target.value })
-                }
-                rows={4}
-                required
-                className="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                placeholder="Enter product description"
-              />
-            </div>
+  const statusCounts = data?.statusDistribution || {
+    pending: 0,
+    confirmed: 0,
+    processing: 0,
+    shipped: 0,
+    delivered: 0,
+    cancelled: 0,
+  };
 
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Product Image
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                className="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-              />
-              {form.image && (
-                <div className="mt-3 flex items-center gap-3">
-                  <img
-                    src={form.image}
-                    alt="Preview"
-                    className="h-32 w-32 rounded-lg object-cover"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setForm({ ...form, image: "" })}
-                    className="rounded-lg px-3 py-1 text-xs font-medium text-red-600 transition hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30"
-                  >
-                    Remove
-                  </button>
+  const topProducts = data?.topSellingProducts || [];
+  const lowStock = data?.lowStockProducts || [];
+
+  return (
+    <div className="py-8">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 space-y-8">
+        {/* Header & Quick Action Buttons */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200/80 pb-6 dark:border-stone-800">
+          <div>
+            <span className="text-xs font-semibold uppercase tracking-widest text-amber-700 dark:text-amber-400">
+              Operations Control
+            </span>
+            <h1 className="mt-1 font-serif text-3xl font-bold tracking-tight text-stone-900 dark:text-white">
+              Bhatia Stores Admin Dashboard
+            </h1>
+            <p className="mt-1 text-xs text-stone-500">
+              Real-time showroom metrics, inventory velocity, and dispatch status.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href="/admin/products?action=new"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-purple-900 px-4 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-purple-800 transition"
+            >
+              <Plus size={14} />
+              <span>+ Add Product</span>
+            </Link>
+
+            <Link
+              href="/admin/launchpad"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-xs font-semibold text-stone-800 shadow-xs hover:bg-stone-50 transition dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200"
+            >
+              <Rocket size={14} />
+              <span>Launchpad</span>
+            </Link>
+
+            <Link
+              href="/admin/settings"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-xs font-semibold text-stone-800 shadow-xs hover:bg-stone-50 transition dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200"
+            >
+              <Settings size={14} />
+              <span>Settings</span>
+            </Link>
+          </div>
+        </div>
+
+        {/* 4 Primary KPI Summary Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="rounded-3xl border border-stone-200/90 bg-white p-6 shadow-xs dark:border-stone-800 dark:bg-stone-900">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
+                Total Net Sales
+              </span>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 text-purple-900 dark:bg-purple-950 dark:text-purple-300">
+                <TrendingUp size={20} />
+              </div>
+            </div>
+            <p className="mt-3 font-serif text-3xl font-bold text-stone-900 dark:text-white">
+              ₹{Number(kpis.totalRevenue).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
+            <p className="mt-1 text-[11px] text-stone-500">
+              Avg Order: ₹{Number(kpis.averageOrderValue).toFixed(2)}
+            </p>
+          </div>
+
+          <div className="rounded-3xl border border-stone-200/90 bg-white p-6 shadow-xs dark:border-stone-800 dark:bg-stone-900">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
+                Total Orders
+              </span>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-900 dark:bg-blue-950 dark:text-blue-300">
+                <ShoppingCart size={20} />
+              </div>
+            </div>
+            <p className="mt-3 font-serif text-3xl font-bold text-stone-900 dark:text-white">
+              {kpis.totalOrders}
+            </p>
+            <p className="mt-1 text-[11px] text-stone-500">
+              {statusCounts.delivered} Delivered • {statusCounts.pending + statusCounts.confirmed} Pending
+            </p>
+          </div>
+
+          <div className="rounded-3xl border border-stone-200/90 bg-white p-6 shadow-xs dark:border-stone-800 dark:bg-stone-900">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
+                Total Customers
+              </span>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300">
+                <Users size={20} />
+              </div>
+            </div>
+            <p className="mt-3 font-serif text-3xl font-bold text-stone-900 dark:text-white">
+              {kpis.totalCustomers}
+            </p>
+            <p className="mt-1 text-[11px] text-stone-500">Registered Accounts</p>
+          </div>
+
+          <div className="rounded-3xl border border-stone-200/90 bg-white p-6 shadow-xs dark:border-stone-800 dark:bg-stone-900">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
+                Products in Catalog
+              </span>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-900 dark:bg-amber-950 dark:text-amber-300">
+                <Package size={20} />
+              </div>
+            </div>
+            <p className="mt-3 font-serif text-3xl font-bold text-stone-900 dark:text-white">
+              {kpis.totalProducts}
+            </p>
+            <p className="mt-1 text-[11px] text-amber-700 dark:text-amber-400">
+              {lowStock.length} Low Stock Alerts
+            </p>
+          </div>
+        </div>
+
+        {/* Order Status Distribution Badges */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="rounded-2xl border border-stone-200/80 bg-white p-4 text-center dark:border-stone-800 dark:bg-stone-900">
+            <span className="text-xs text-stone-500">Pending</span>
+            <p className="font-serif text-2xl font-bold text-amber-600 mt-1">{statusCounts.pending}</p>
+          </div>
+          <div className="rounded-2xl border border-stone-200/80 bg-white p-4 text-center dark:border-stone-800 dark:bg-stone-900">
+            <span className="text-xs text-stone-500">Confirmed</span>
+            <p className="font-serif text-2xl font-bold text-blue-600 mt-1">{statusCounts.confirmed}</p>
+          </div>
+          <div className="rounded-2xl border border-stone-200/80 bg-white p-4 text-center dark:border-stone-800 dark:bg-stone-900">
+            <span className="text-xs text-stone-500">Processing</span>
+            <p className="font-serif text-2xl font-bold text-purple-600 mt-1">{statusCounts.processing || 0}</p>
+          </div>
+          <div className="rounded-2xl border border-stone-200/80 bg-white p-4 text-center dark:border-stone-800 dark:bg-stone-900">
+            <span className="text-xs text-stone-500">In Transit</span>
+            <p className="font-serif text-2xl font-bold text-indigo-600 mt-1">{statusCounts.shipped}</p>
+          </div>
+          <div className="rounded-2xl border border-stone-200/80 bg-white p-4 text-center dark:border-stone-800 dark:bg-stone-900">
+            <span className="text-xs text-stone-500">Delivered</span>
+            <p className="font-serif text-2xl font-bold text-emerald-600 mt-1">{statusCounts.delivered}</p>
+          </div>
+          <div className="rounded-2xl border border-stone-200/80 bg-white p-4 text-center dark:border-stone-800 dark:bg-stone-900">
+            <span className="text-xs text-stone-500">Cancelled</span>
+            <p className="font-serif text-2xl font-bold text-stone-400 mt-1">{statusCounts.cancelled}</p>
+          </div>
+        </div>
+
+        {/* 2-Column Grid: Top Products & Low Stock Alerts */}
+        <div className="grid gap-8 lg:grid-cols-12">
+          {/* Left: Top Selling Products (7 cols) */}
+          <div className="lg:col-span-7 space-y-4">
+            <div className="rounded-3xl border border-stone-200/90 bg-white p-6 shadow-xs dark:border-stone-800 dark:bg-stone-900">
+              <div className="flex items-center justify-between border-b border-stone-100 pb-4 dark:border-stone-800">
+                <h3 className="font-serif text-lg font-bold text-stone-900 dark:text-white">
+                  Top-Selling Surfaces & Suites
+                </h3>
+                <Link
+                  href="/admin/analytics"
+                  className="text-xs font-semibold text-purple-900 hover:underline dark:text-amber-400"
+                >
+                  Full Analytics →
+                </Link>
+              </div>
+
+              {topProducts.length === 0 ? (
+                <p className="py-8 text-center text-xs text-stone-500">No sales transactions recorded in this period.</p>
+              ) : (
+                <div className="mt-4 divide-y divide-stone-100 dark:divide-stone-800">
+                  {topProducts.map((p: any) => (
+                    <div key={p.id} className="py-3 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <img
+                          src={p.image}
+                          alt={p.name}
+                          className="h-11 w-11 shrink-0 rounded-lg object-cover border border-stone-200 dark:border-stone-700"
+                        />
+                        <div className="truncate">
+                          <p className="text-xs sm:text-sm font-semibold text-stone-900 dark:text-white truncate">
+                            {p.name}
+                          </p>
+                          <span className="text-[11px] text-stone-500">{p.category}</span>
+                        </div>
+                      </div>
+
+                      <div className="text-right shrink-0">
+                        <p className="text-xs sm:text-sm font-bold text-stone-900 dark:text-white">
+                          ₹{Number(p.revenue).toFixed(2)}
+                        </p>
+                        <p className="text-[11px] text-stone-500">{p.units} boxes sold</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Category</label>
-              <select
-                value={form.category}
-                onChange={(e) => setForm({ ...form, category: e.target.value })}
-                className="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-              >
-                {categories.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Stock</label>
-              <input
-                type="number"
-                value={form.stock}
-                onChange={(e) => setForm({ ...form, stock: e.target.value })}
-                className="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-              />
-            </div>
           </div>
-          <button
-            type="submit"
-            disabled={saving}
-            className="mt-6 rounded-full bg-indigo-600 px-8 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-50"
-          >
-            {saving ? "Saving..." : editing ? "Update Product" : "Create Product"}
-          </button>
-        </form>
-      )}
 
-      {/* Products Table */}
-      <div className="mt-8 overflow-x-auto">
-        {loading ? (
-          <div className="animate-pulse space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-16 rounded-xl bg-gray-200 dark:bg-gray-700" />
-            ))}
-          </div>
-        ) : products.length === 0 ? (
-          <p className="text-center text-gray-500 dark:text-gray-400 py-10">
-            No products yet. Click &ldquo;Add Product&rdquo; to create one.
-          </p>
-        ) : (
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-700">
-                <th className="py-3 pr-4 font-medium text-gray-500 dark:text-gray-400">Product</th>
-                <th className="py-3 pr-4 font-medium text-gray-500 dark:text-gray-400">Category</th>
-                <th className="py-3 pr-4 font-medium text-gray-500 dark:text-gray-400">Price</th>
-                <th className="py-3 pr-4 font-medium text-gray-500 dark:text-gray-400">Stock</th>
-                <th className="py-3 font-medium text-gray-500 dark:text-gray-400">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {products.map((product) => (
-                <tr key={product.id} className="border-b border-gray-100 dark:border-gray-800">
-                  <td className="py-3 pr-4">
-                    <div className="flex items-center gap-3">
-                      {product.image ? (
-                        <img
-                          src={product.image}
-                          alt={product.name}
-                          className="h-10 w-10 rounded-lg object-cover"
-                        />
-                      ) : (
-                        <span className="text-2xl">🛒</span>
-                      )}
-                      <span className="font-medium text-gray-900 dark:text-white">
-                        {product.name}
+          {/* Right: Low-Stock Inventory Warnings (5 cols) */}
+          <div className="lg:col-span-5 space-y-4">
+            <div className="rounded-3xl border border-stone-200/90 bg-white p-6 shadow-xs dark:border-stone-800 dark:bg-stone-900">
+              <div className="flex items-center justify-between border-b border-stone-100 pb-4 dark:border-stone-800">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle size={17} className="text-amber-600" />
+                  <h3 className="font-serif text-lg font-bold text-stone-900 dark:text-white">
+                    Low-Stock Alerts
+                  </h3>
+                </div>
+                <Link
+                  href="/admin/products"
+                  className="text-xs font-semibold text-purple-900 hover:underline dark:text-amber-400"
+                >
+                  Manage Stock →
+                </Link>
+              </div>
+
+              {lowStock.length === 0 ? (
+                <p className="py-8 text-center text-xs text-stone-500">All catalog stock levels are healthy (&gt; 25 units).</p>
+              ) : (
+                <div className="mt-4 divide-y divide-stone-100 dark:divide-stone-800">
+                  {lowStock.map((item: any) => (
+                    <div key={item.id} className="py-2.5 flex items-center justify-between gap-3">
+                      <div className="truncate min-w-0">
+                        <p className="text-xs font-semibold text-stone-900 dark:text-white truncate">
+                          {item.name}
+                        </p>
+                        <span className="text-[11px] text-stone-500">{item.category}</span>
+                      </div>
+
+                      <span
+                        className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
+                          item.stock <= 5
+                            ? "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300"
+                            : "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
+                        }`}
+                      >
+                        {item.stock} left
                       </span>
                     </div>
-                  </td>
-                  <td className="py-3 pr-4 text-gray-600 dark:text-gray-400">{product.category}</td>
-                  <td className="py-3 pr-4 font-medium text-gray-900 dark:text-white">
-                    ₹{parseFloat(product.price).toFixed(2)}
-                  </td>
-                  <td className="py-3 pr-4 text-gray-600 dark:text-gray-400">{product.stock}</td>
-                  <td className="py-3">
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => startEdit(product)}
-                        className="rounded-lg px-3 py-1 text-xs font-medium text-indigo-600 transition hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-900/30"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => deleteProduct(product.id)}
-                        className="rounded-lg px-3 py-1 text-xs font-medium text-red-600 transition hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

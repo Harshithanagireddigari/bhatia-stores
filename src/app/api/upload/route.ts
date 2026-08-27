@@ -1,46 +1,33 @@
-import { NextRequest, NextResponse } from "next/server";
-import cloudinary from "@/lib/cloudinary";
+import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
+import { processAndStoreImage } from "@/lib/storage";
 
-export async function POST(req: NextRequest) {
-  const user = await getSessionUser();
-  if (!user || user.role !== "admin") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+export async function POST(req: Request) {
   try {
-    const data = await req.formData();
-    const file = data.get("file") as File;
-    if (!file || !file.type.startsWith("image/")) {
-      return NextResponse.json(
-        { error: "Please upload a valid image file" },
-        { status: 400 }
-      );
+    const user = await getSessionUser();
+    if (!user || user.role !== "admin") {
+      return NextResponse.json({ error: "Unauthorized. Admin privileges required." }, { status: 403 });
     }
-    if (file.size > 5 * 1024 * 1024) {
-      return NextResponse.json({ error: "Image must be smaller than 5MB" }, { status: 400 });
+
+    const formData = await req.formData();
+    const file = formData.get("file") as File | null;
+
+    if (!file) {
+      return NextResponse.json({ error: "No image file provided." }, { status: 400 });
     }
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const result: any = await new Promise((resolve, reject) => {
-      cloudinary.uploader
-        .upload_stream(
-          {
-            folder: "bhatia-products",
-          },
-          (error, result) => {
-            if (error) reject(error);
-            else resolve(result);
-          }
-        )
-        .end(buffer);
-    });
+
+    const result = await processAndStoreImage(file);
+
     return NextResponse.json({
-      imageUrl: result.secure_url,
+      success: true,
+      imageUrl: result.url,
+      imageId: result.id,
+      filename: result.filename,
     });
-  } catch (error) {
-    console.error(error);
+  } catch (error: any) {
+    console.error("Upload route error:", error);
     return NextResponse.json(
-      { error: "Upload failed" },
+      { error: error?.message || "Image upload failed. Please try again." },
       { status: 500 }
     );
   }

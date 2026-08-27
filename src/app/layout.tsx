@@ -6,34 +6,20 @@ import { WishlistProvider } from "@/components/WishlistContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Toaster } from "sonner";
-import { Inter, Poppins } from "next/font/google";
 import "./globals.css";
 
-// Load fonts – Inter for body, Poppins for display/headings
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-body",
-});
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["400", "600", "700"],
-  variable: "--font-display",
-});
-
 export const metadata: Metadata = {
-  title: "Bhatia Stores - Your One-Stop Shop",
-  description: "Premium products with fast delivery and secure payments.",
+  title: "Bhatia Stores - Luxury Tiles, Sanitaryware & Faucets Showroom",
+  description: "Explore world-class PGVT vitrified floor slabs, high-definition wall tiles, designer quartz sinks, and Italian sanitaryware at Bhatia Stores.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${poppins.variable}`}
       suppressHydrationWarning
     >
-      <body className="bg-gray-50 text-gray-900 antialiased transition-colors dark:bg-gray-950 dark:text-gray-100">
+      <body className="bg-stone-50 text-stone-900 antialiased transition-colors dark:bg-stone-950 dark:text-stone-100 font-sans selection:bg-purple-900 selection:text-white">
         <ThemeProvider>
           <CartProvider>
             <WishlistProvider>

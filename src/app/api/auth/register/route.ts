@@ -8,30 +8,31 @@ export async function POST(req: Request) {
     if (await isRateLimited(req, "register", 5, 15 * 60_000)) {
       return NextResponse.json({ error: "Too many registration attempts. Please try again later." }, { status: 429 });
     }
-    const { name, email, password, captchaAnswer } = await req.json();
+    const { name, email, phone, password, captchaAnswer } = await req.json();
     if (!name || !email || !password) {
-      return NextResponse.json({ error: "All fields are required" }, { status: 400 });
+      return NextResponse.json({ error: "Full name, email, and password are required." }, { status: 400 });
     }
 
     if (password.length < 6) {
-      return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
+      return NextResponse.json({ error: "Password must be at least 6 characters long." }, { status: 400 });
     }
 
     if (!(await verifyCaptchaAnswer(captchaAnswer))) {
-      return NextResponse.json({ error: "Please complete the human verification" }, { status: 400 });
+      return NextResponse.json({ error: "Please solve the human verification question." }, { status: 400 });
     }
 
-    const existing = await getUserByEmail(email);
+    const cleanEmail = email.trim().toLowerCase();
+    const existing = await getUserByEmail(cleanEmail);
     if (existing) {
-      return NextResponse.json({ error: "Email already registered" }, { status: 409 });
+      return NextResponse.json({ error: "An account is already registered with this email address." }, { status: 409 });
     }
 
-    const user = await createUser(name, email, password, "customer");
+    const user = await createUser(name.trim(), cleanEmail, password, phone?.trim(), "customer");
     await setSessionCookie(user.id);
 
     return NextResponse.json({ user }, { status: 201 });
   } catch (error) {
     console.error("Register error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: "Registration failed. Please try again." }, { status: 500 });
   }
 }
