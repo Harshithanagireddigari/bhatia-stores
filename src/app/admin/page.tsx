@@ -160,12 +160,12 @@ export default function AdminProductsPage() {
     <div className="mx-auto max-w-6xl px-4 py-10">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <Link
-            href="/admin"
-            className="text-sm text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400"
-          >
-            ← Back to Dashboard
-          </Link>
+         <Link
+  href="/"
+  className="text-sm text-gray-500 hover:text-indigo-600"
+>
+  ← Back to Store
+</Link>
           <h1 className="mt-1 text-3xl font-bold text-gray-900 dark:text-white">
             Manage Products
           </h1>
