@@ -33,8 +33,6 @@ export default function Navbar() {
   return (
     <nav className="sticky top-0 z-50 border-b border-gray-200 bg-white/90 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
-
-        {/* Logo */}
         <Link
           href="/"
           className="text-xl font-bold tracking-tight text-indigo-600"
@@ -42,17 +40,13 @@ export default function Navbar() {
           Bhatia Stores
         </Link>
 
-        {/* Desktop Navigation */}
         <div className="hidden items-center gap-6 md:flex">
-
-          {/* Search */}
           <form onSubmit={submitSearch} className="relative">
             <Search
               aria-hidden
               size={16}
               className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
             />
-
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -61,19 +55,16 @@ export default function Navbar() {
             />
           </form>
 
-          {/* Shop */}
           <Link href="/shop" className={linkClass}>
             Shop
           </Link>
 
-          {/* Wishlist */}
           <Link
             href="/wishlist"
             aria-label="Wishlist"
             className="relative rounded-full p-2 text-gray-600 transition hover:text-indigo-600"
           >
             ♡
-
             {itemCount > 0 && (
               <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white">
                 {itemCount}
@@ -81,14 +72,12 @@ export default function Navbar() {
             )}
           </Link>
 
-          {/* Cart */}
           <Link
             href="/cart"
             aria-label="Cart"
             className="relative rounded-full p-2 text-gray-600 transition hover:text-indigo-600"
           >
             🛒
-
             {itemCount > 0 && (
               <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white">
                 {itemCount}
@@ -96,23 +85,17 @@ export default function Navbar() {
             )}
           </Link>
 
-          {/* Orders */}
           <Link href="/orders" className={linkClass}>
             My Orders
           </Link>
 
-          {/* Contact */}
-          <Link href="/contact" className={linkClass}>
-            Contact
+          <Link href="/account" className={linkClass}>
+            Account
           </Link>
 
-          {/* Logout */}
           <button
             onClick={async () => {
-              await fetch("/api/auth/logout", {
-                method: "POST",
-              });
-
+              await fetch("/api/auth/logout", { method: "POST" });
               router.push("/login");
               router.refresh();
             }}
@@ -122,7 +105,6 @@ export default function Navbar() {
           </button>
         </div>
 
-        {/* Mobile Menu Button */}
         <div className="flex items-center gap-2 md:hidden">
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
@@ -146,19 +128,15 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Menu */}
       {mobileOpen && (
         <div className="border-t border-gray-200 px-4 pb-4 md:hidden">
           <div className="flex flex-col gap-3 pt-3">
-
-            {/* Mobile Search */}
             <form onSubmit={submitSearch} className="relative">
               <Search
                 aria-hidden
                 size={16}
                 className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
               />
-
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -200,19 +178,16 @@ export default function Navbar() {
             </Link>
 
             <Link
-              href="/contact"
+              href="/account"
               className={linkClass}
               onClick={() => setMobileOpen(false)}
             >
-              Contact
+              Account
             </Link>
 
             <button
               onClick={async () => {
-                await fetch("/api/auth/logout", {
-                  method: "POST",
-                });
-
+                await fetch("/api/auth/logout", { method: "POST" });
                 router.push("/login");
                 router.refresh();
               }}
@@ -220,7 +195,6 @@ export default function Navbar() {
             >
               Logout
             </button>
-
           </div>
         </div>
       )}

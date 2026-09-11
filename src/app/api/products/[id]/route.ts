@@ -4,6 +4,13 @@ import { products } from "@/db/schema";
 import { getSessionUser } from "@/lib/auth";
 import { eq } from "drizzle-orm";
 
+function isExternalImageUrl(value: unknown): value is string {
+  try {
+    const url = new URL(String(value));
+    return url.protocol === "https:";
+  } catch { return false; }
+}
+
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -28,6 +35,9 @@ export async function PUT(
   const { id } = await params;
   try {
     const { name, description, price, image, category, stock } = await req.json();
+    if (image !== undefined && !isExternalImageUrl(image)) {
+      return NextResponse.json({ error: "Product images must use the image storage URL." }, { status: 400 });
+    }
     const updateData: Record<string, unknown> = {};
     if (name !== undefined) updateData.name = name;
     if (description !== undefined) updateData.description = description;

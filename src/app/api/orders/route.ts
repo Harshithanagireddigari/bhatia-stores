@@ -148,6 +148,9 @@ export async function POST(req: Request) {
       phone,
       total: total.toString(),
       paymentMethod,
+      address,
+      city: city || "",
+      phone,
       items: verifiedItems.map(({ product, quantity }) => ({ productName: product.name, quantity, price: product.price })),
     }).catch((error) => console.error("Order notification error:", error));
     return NextResponse.json(created[0], { status: 201 });

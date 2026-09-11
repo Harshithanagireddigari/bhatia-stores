@@ -1,9 +1,11 @@
 type OrderEmail = {
-  phone: string;
   id: string;
   customerName: string;
   customerEmail: string;
   total: string;
+  address: string;
+  city: string;
+  phone: string;
   paymentMethod: "cod" | "razorpay";
   items: { productName: string; quantity: number; price: string }[];
 };
@@ -34,22 +36,32 @@ async function sendEmail(to: string, subject: string, html: string, text: string
   }
 }
 
-// import { sendWhatsApp } from "./whatsapp"; // Removed unused import
+export async function sendPasswordResetEmail({ to, name, resetUrl }: { to: string; name: string; resetUrl: string }) {
+  const safeName = escapeHtml(name);
+  const safeUrl = escapeHtml(resetUrl);
+  await sendEmail(
+    to,
+    "Reset your Bhatia Stores password",
+    `<h1>Reset your password</h1><p>Hello ${safeName},</p><p>Use the link below to set a new Bhatia Stores password. This link expires in one hour and can be used only once.</p><p><a href="${safeUrl}">Reset password</a></p><p>If you did not request this, you can safely ignore this email.</p>`,
+    `Hello ${name},\n\nReset your Bhatia Stores password using this link (valid for one hour):\n${resetUrl}\n\nIf you did not request this, you can safely ignore this email.`,
+  );
+}
 
 export async function sendOrderNotifications(order: OrderEmail) {
   const adminEmail = process.env.ORDER_NOTIFICATION_EMAIL;
   const shortId = order.id.slice(0, 8).toUpperCase();
-  const payment = order.paymentMethod === "cod" ? "Cash on Delivery" : "Paid online via Razorpay";
+  const payment = order.paymentMethod === "cod" ? "Cash on Delivery" : "Prepaid";
   const items = order.items
     .map((item) => `<li>${escapeHtml(item.productName)} &times; ${item.quantity} &mdash; ${money(item.price)}</li>`)
     .join("");
   const plainItems = order.items
     .map((item) => `- ${item.productName} x ${item.quantity} - ${money(item.price)}`)
     .join("\n");
-  const customerHtml = `<h1>Thanks for your order, ${escapeHtml(order.customerName)}!</h1><p>Your order <strong>#${shortId}</strong> has been received and is pending confirmation.</p><p><strong>Payment:</strong> ${payment}<br/><strong>Total:</strong> ${money(order.total)}</p><h2>Items</h2><ul>${items}</ul>`;
-  const adminHtml = `<h1>New order #${shortId}</h1><p><strong>Customer:</strong> ${escapeHtml(order.customerName)} (${escapeHtml(order.customerEmail)})</p><p><strong>Payment:</strong> ${payment}<br/><strong>Total:</strong> ${money(order.total)}</p><h2>Items</h2><ul>${items}</ul>`;
-  const customerText = `Thanks for your order, ${order.customerName}!\n\nOrder #${shortId} has been received and is pending confirmation.\nPayment: ${payment}\nTotal: ${money(order.total)}\n\nItems\n${plainItems}`;
-  const adminText = `New order #${shortId}\nCustomer: ${order.customerName} (${order.customerEmail})\nPayment: ${payment}\nTotal: ${money(order.total)}\n\nItems\n${plainItems}`;
+  const delivery = `${escapeHtml(order.address)}${order.city ? `, ${escapeHtml(order.city)}` : ""}`;
+  const customerHtml = `<h1>Thank you, ${escapeHtml(order.customerName)}!</h1><p>Your Bhatia Stores order <strong>#${shortId}</strong> has been received and is pending confirmation.</p><p><strong>Payment:</strong> ${payment}<br/><strong>Total:</strong> ${money(order.total)}<br/><strong>Delivery address:</strong> ${delivery}</p><h2>Items</h2><ul>${items}</ul><p>Need help? WhatsApp us at +91 91204 35950.</p>`;
+  const adminHtml = `<h1>New order #${shortId}</h1><p><strong>Customer:</strong> ${escapeHtml(order.customerName)}<br/><strong>Email:</strong> ${escapeHtml(order.customerEmail)}<br/><strong>Phone:</strong> ${escapeHtml(order.phone)}<br/><strong>Delivery address:</strong> ${delivery}</p><p><strong>Payment:</strong> ${payment}<br/><strong>Total:</strong> ${money(order.total)}</p><h2>Items</h2><ul>${items}</ul>`;
+  const customerText = `Thank you, ${order.customerName}!\n\nOrder #${shortId} has been received and is pending confirmation.\nPayment: ${payment}\nTotal: ${money(order.total)}\nDelivery: ${order.address}${order.city ? `, ${order.city}` : ""}\n\nItems\n${plainItems}\n\nNeed help? WhatsApp +91 91204 35950.`;
+  const adminText = `New order #${shortId}\nCustomer: ${order.customerName} (${order.customerEmail})\nPhone: ${order.phone}\nDelivery: ${order.address}${order.city ? `, ${order.city}` : ""}\nPayment: ${payment}\nTotal: ${money(order.total)}\n\nItems\n${plainItems}`;
 
   const notifications = [sendEmail(order.customerEmail, `Order #${shortId} received`, customerHtml, customerText)];
   if (adminEmail) notifications.push(sendEmail(adminEmail, `New order #${shortId}`, adminHtml, adminText));

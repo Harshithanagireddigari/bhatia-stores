@@ -172,6 +172,12 @@ export default function AdminProductsPage() {
         </div>
         <div className="flex items-center gap-3">
           <Link
+            href="/admin/launchpad"
+            className="rounded-full border border-[#d9c69d] px-5 py-2.5 text-sm font-semibold text-[#73511b] transition hover:bg-[#fbf6e9]"
+          >
+            Launchpad
+          </Link>
+          <Link
             href="/admin/orders"
             className="rounded-full border border-indigo-200 px-5 py-2.5 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-300 dark:hover:bg-indigo-950"
           >

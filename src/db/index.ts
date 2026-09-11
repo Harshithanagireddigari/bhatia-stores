@@ -7,6 +7,15 @@ if (!databaseUrl) {
   throw new Error("DATABASE_URL is required");
 }
 
+// pg will change the meaning of sslmode=require in its next major release.
+// Keep the current strict, certificate-and-hostname-verified connection
+// behavior explicit without requiring a developer to expose or rewrite the
+// database secret in .env.local.
+const connectionUrl = new URL(databaseUrl);
+if (["prefer", "require", "verify-ca"].includes(connectionUrl.searchParams.get("sslmode") ?? "")) {
+  connectionUrl.searchParams.set("sslmode", "verify-full");
+}
+
 const globalForDb = globalThis as typeof globalThis & {
   __arenaNextJsPostgresqlPool?: Pool;
 };
@@ -14,7 +23,7 @@ const globalForDb = globalThis as typeof globalThis & {
 export const pool =
   globalForDb.__arenaNextJsPostgresqlPool ??
   new Pool({
-    connectionString: databaseUrl,
+    connectionString: connectionUrl.toString(),
   });
 
 if (process.env.NODE_ENV !== "production") {

@@ -1,5 +1,36 @@
 @import "tailwindcss";
 
+@theme {
+  --font-serif: Georgia, "Times New Roman", serif;
+}
+
+.eyebrow {
+  color: #8a764e;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.footer-title {
+  margin-bottom: 1rem;
+  color: #f0eadd;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+footer a {
+  display: block;
+  margin-top: 0.6rem;
+  color: #aaa49b;
+  font-size: 0.875rem;
+  transition: color 0.15s ease;
+}
+
+footer a:hover { color: #e7d093; }
+
 /* Smooth transitions for theme switching */
 html {
   transition: color 0.2s ease, background-color 0.2s ease;

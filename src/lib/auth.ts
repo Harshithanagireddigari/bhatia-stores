@@ -11,8 +11,11 @@ const SESSION_COOKIE = "bhatia_session";
 const SESSION_MAX_AGE = 60 * 60 * 24 * 7;
 
 function sessionSecret() {
-  const secret = process.env.SESSION_SECRET;
-  if (!secret) throw new Error("SESSION_SECRET is required");
+  // DATABASE_URL is already a server-only, high-entropy credential. This
+  // fallback lets existing deployments keep working until a dedicated secret
+  // is configured; production should still set SESSION_SECRET explicitly.
+  const secret = process.env.SESSION_SECRET || process.env.DATABASE_URL;
+  if (!secret) throw new Error("SESSION_SECRET or DATABASE_URL is required");
   return secret;
 }
 

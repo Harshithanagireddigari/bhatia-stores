@@ -1,10 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { brandImageUrls, hasHostedImage } from "@/config/image-urls";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -81,13 +81,11 @@ export default function LoginPage() {
 
         {/* LEFT: BRAND PANEL */}
         <section className="relative hidden min-h-[680px] overflow-hidden lg:block">
-          <Image
-            src="/products/catalog/bhatia-catalogue-02.jpg"
-            alt="Bhatia Stores tile collection"
-            fill
-            priority
-            className="object-cover"
-          />
+          {hasHostedImage(brandImageUrls.loginPanel) ? (
+            <img src={brandImageUrls.loginPanel} alt="Bhatia Stores tile collection" className="absolute inset-0 h-full w-full object-cover" />
+          ) : (
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_12%,#d8b56c50,transparent_25%),linear-gradient(145deg,#1b1713,#625342)]" />
+          )}
 
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-black/10" />
 

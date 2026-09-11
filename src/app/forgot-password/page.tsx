@@ -1,66 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { FormEvent, useState } from "react";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const res = await fetch("/api/auth/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "Failed to request OTP");
-        return;
-      }
-      toast.success("OTP sent via SMS (check console in dev)");
-      // Redirect to OTP verification page with email in query string
-      router.replace(`/otp?email=${encodeURIComponent(email)}`);
-    } catch {
-      toast.error("Something went wrong");
-    } finally {
-      setLoading(false);
-    }
+  const [state, setState] = useState<"idle" | "loading" | "sent" | "error">("idle");
+  const [message, setMessage] = useState("");
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); setState("loading");
+    try { const res = await fetch("/api/auth/forgot-password", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) }); const data = await res.json(); setMessage(data.message || data.error || "Please try again."); setState(res.ok ? "sent" : "error"); } catch { setMessage("Could not reach the server. Please try again."); setState("error"); }
   }
-
-  return (
-    <div className="mx-auto flex min-h-[80vh] max-w-md items-center px-4">
-      <div className="w-full rounded-2xl border border-gray-200 bg-white p-8 dark:border-gray-700 dark:bg-gray-800">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Forgot Password</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Enter your email address to receive a one‑time password (OTP) via SMS.
-        </p>
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="mt-1 w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-              placeholder="you@example.com"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-full bg-primary-600 py-3 font-semibold text-white transition hover:bg-primary-700 disabled:opacity-50"
-          >
-            {loading ? "Sending…" : "Send OTP"}
-          </button>
-        </form>
-      </div>
-    </div>
-  );
+  return <main className="min-h-[calc(100vh-73px)] bg-[#f8f6f1] px-4 py-16"><section className="mx-auto max-w-md rounded-2xl border border-stone-200 bg-white p-8 shadow-xl shadow-stone-300/30"><p className="eyebrow">Account recovery</p><h1 className="mt-3 font-serif text-4xl">Reset your password</h1><p className="mt-3 text-sm leading-6 text-stone-600">Enter your account email and we’ll send a secure one-time reset link.</p>{state === "sent" ? <div className="mt-7 rounded-xl bg-emerald-50 p-4 text-sm text-emerald-800">{message}<Link href="/login" className="mt-3 block font-semibold underline">Return to sign in</Link></div> : <form className="mt-7 space-y-5" onSubmit={submit}><label className="block text-sm font-semibold">Email address<input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} className="mt-2 w-full rounded-xl border border-stone-300 px-4 py-3 outline-none focus:border-[#4a3373]" placeholder="you@example.com" /></label>{state === "error" && <p className="text-sm text-red-700">{message}</p>}<button disabled={state === "loading"} className="w-full bg-[#4a3373] py-3 text-sm font-semibold text-white disabled:opacity-60">{state === "loading" ? "Sending…" : "Send reset link"}</button></form>}<Link href="/login" className="mt-6 block text-center text-sm font-semibold text-[#4a3373]">← Back to sign in</Link></section></main>;
 }

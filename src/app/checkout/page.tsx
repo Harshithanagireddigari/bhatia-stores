@@ -197,7 +197,7 @@ export default function CheckoutPage() {
             <div className="mt-2 space-y-2 rounded-xl border border-gray-300 p-3 dark:border-gray-600">
               <label className="flex cursor-pointer items-center gap-3 text-sm text-gray-700 dark:text-gray-300">
                 <input type="radio" name="paymentMethod" checked={paymentMethod === "razorpay"} onChange={() => setPaymentMethod("razorpay")} />
-                Pay securely online with Razorpay
+                Prepaid — pay securely online
               </label>
               <label className="flex cursor-pointer items-center gap-3 text-sm text-gray-700 dark:text-gray-300">
                 <input type="radio" name="paymentMethod" checked={paymentMethod === "cod"} onChange={() => setPaymentMethod("cod")} />
@@ -266,11 +266,11 @@ export default function CheckoutPage() {
             disabled={loading}
             className="w-full rounded-full bg-indigo-600 py-3 font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-50"
           >
-            {loading ? "Processing..." : `Pay ₹${total.toFixed(2)} with Razorpay`}
+            {loading ? "Processing..." : `Pay ₹${total.toFixed(2)} securely`}
           </button>
 
           <p className="text-center text-xs text-gray-400 dark:text-gray-500">
-            Secured by Razorpay. Your payment info is encrypted.
+            Your payment information is encrypted and secure.
           </p>
         </form>
 

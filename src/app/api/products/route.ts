@@ -5,6 +5,13 @@ import { getSessionUser } from "@/lib/auth";
 import { v4 as uuidv4 } from "uuid";
 import { eq } from "drizzle-orm";
 
+function isExternalImageUrl(value: unknown): value is string {
+  try {
+    const url = new URL(String(value));
+    return url.protocol === "https:";
+  } catch { return false; }
+}
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const category = searchParams.get("category");
@@ -34,6 +41,9 @@ export async function POST(req: Request) {
     const { name, description, price, image, category, stock } = await req.json();
     if (!name || !description || !price || !image || !category) {
       return NextResponse.json({ error: "All fields are required" }, { status: 400 });
+    }
+    if (!isExternalImageUrl(image)) {
+      return NextResponse.json({ error: "Upload the product image first. Product images must use the image storage URL." }, { status: 400 });
     }
 
     const id = uuidv4();

@@ -77,6 +77,30 @@ export const sessions = pgTable("sessions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  tokenHash: text("token_hash").notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+  usedAt: timestamp("used_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const heroSlides = pgTable("hero_slides", {
+  id: text("id").primaryKey(),
+  imageUrl: text("image_url").notNull(),
+  imagePublicId: text("image_public_id"),
+  eyebrow: text("eyebrow").notNull().default("Bhatia Stores"),
+  heading: text("heading").notNull(),
+  accent: text("accent").notNull(),
+  description: text("description").notNull(),
+  isActive: integer("is_active").notNull().default(1),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const paymentOrders = pgTable("payment_orders", {
   id: text("id").primaryKey(),
   razorpayOrderId: text("razorpay_order_id").notNull().unique(),
