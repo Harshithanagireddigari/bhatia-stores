@@ -38,7 +38,7 @@ export function parseProductInput(body: Record<string, unknown>, { partial = fal
   const input: Partial<ProductInput> = {};
 
   if (!partial || body.name !== undefined) input.name = requiredText(body.name, { field: "Name", max: 120 });
-  if (!partial || body.description !== undefined) input.description = requiredText(body.description, { field: "Description", max: 2000 });
+  if (!partial || body.description !== undefined) input.description = requiredText(body.description, { field: "Description", max: 2000, multiline: true });
   if (!partial || body.price !== undefined) input.price = moneyValue(body.price, { field: "Price" });
   if (!partial || body.image !== undefined) input.image = productImage(body.image);
   if (!partial || body.category !== undefined) input.category = requiredText(body.category, { field: "Category", max: 60 });

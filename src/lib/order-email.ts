@@ -30,6 +30,11 @@ function escapeHtml(value: string) {
   );
 }
 
+function sanitizeHeader(value: string): string {
+  // Disallow CRLF to prevent email header injection
+  return value.replace(/[\r\n\u0000-\u001f\u007f]/g, " ").trim();
+}
+
 async function sendEmail(to: string, subject: string, html: string, text: string) {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.EMAIL_FROM;
@@ -38,10 +43,13 @@ async function sendEmail(to: string, subject: string, html: string, text: string
     return;
   }
 
+  const safeTo = sanitizeHeader(to);
+  const safeSubject = sanitizeHeader(subject);
+
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from, to: [to], subject, html, text }),
+    body: JSON.stringify({ from: sanitizeHeader(from), to: [safeTo], subject: safeSubject, html, text }),
   });
   if (!response.ok) {
     const errorText = await response.text().catch(() => "");

@@ -1,9 +1,13 @@
 /**
- * Server-side input validation.
+ * Server-side input validation & injection defense.
  *
  * Every value that reaches the database, a payment provider, or an email is
- * re-validated here, on the server, no matter what the browser claims. Client
- * checks exist only to give quick feedback.
+ * re-validated here on the server. Protects against:
+ *  - Prototype pollution attacks (__proto__, constructor, prototype)
+ *  - Stored and reflected XSS / HTML injection / script injection
+ *  - CRLF / HTTP & Email header injection
+ *  - SQL injection (type and constraint bounding)
+ *  - Mass assignment and schema manipulation
  */
 
 /** Raised for any rejected input; mapped to HTTP 400 by `apiFailure`. */
@@ -15,33 +19,97 @@ export class ValidationError extends Error {
   }
 }
 
-type TextOptions = { field: string; min?: number; max: number };
+/** Reject dangerous script and HTML tags in untrusted text. */
+const DANGEROUS_PATTERNS = [
+  /<\s*script/i,
+  /<\s*\/\s*script/i,
+  /javascript\s*:/i,
+  /vbscript\s*:/i,
+  /data\s*:\s*text\/html/i,
+  /<\s*iframe/i,
+  /<\s*object/i,
+  /<\s*embed/i,
+  /<\s*applet/i,
+  /<\s*form/i,
+  /onload\s*=/i,
+  /onerror\s*=/i,
+  /onclick\s*=/i,
+  /onmouseover\s*=/i,
+  /onfocus\s*=/i,
+];
 
-/** Required, trimmed, length-bounded text. Control characters are rejected. */
-export function requiredText(value: unknown, { field, min = 1, max }: TextOptions): string {
+export function disallowScriptInjection(text: string, field: string): void {
+  for (const pattern of DANGEROUS_PATTERNS) {
+    if (pattern.test(text)) {
+      throw new ValidationError(`${field} contains invalid or dangerous content.`);
+    }
+  }
+}
+
+/** Reject CRLF characters to prevent HTTP/SMTP header injection & response splitting. */
+export function disallowCrlf(text: string, field: string): void {
+  if (/[\r\n]/.test(text)) {
+    throw new ValidationError(`${field} must not contain newline characters.`);
+  }
+}
+
+/** Recursively checks an object for prototype pollution injection keys. */
+export function assertNoPrototypePollution(obj: unknown, depth = 0): void {
+  if (depth > 10) throw new ValidationError("Payload nesting is too deep.");
+  if (typeof obj !== "object" || obj === null) return;
+  if (Array.isArray(obj)) {
+    for (const item of obj) assertNoPrototypePollution(item, depth + 1);
+    return;
+  }
+  for (const key of Object.keys(obj as Record<string, unknown>)) {
+    if (key === "__proto__" || key === "constructor" || key === "prototype") {
+      throw new ValidationError("Invalid object property in request payload.");
+    }
+    assertNoPrototypePollution((obj as Record<string, unknown>)[key], depth + 1);
+  }
+}
+
+type TextOptions = {
+  field: string;
+  min?: number;
+  max: number;
+  multiline?: boolean;
+};
+
+/** Required, trimmed, length-bounded text. Control characters, CRLF, and script tags are rejected. */
+export function requiredText(
+  value: unknown,
+  { field, min = 1, max, multiline = false }: TextOptions
+): string {
   if (typeof value !== "string") throw new ValidationError(`${field} is required.`);
+  if (!multiline) {
+    disallowCrlf(value, field);
+  }
   const cleaned = value.trim();
   if (cleaned.length < min) throw new ValidationError(`${field} is required.`);
   if (cleaned.length > max) throw new ValidationError(`${field} must be ${max} characters or fewer.`);
   if (/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(cleaned)) {
     throw new ValidationError(`${field} contains invalid characters.`);
   }
+  disallowScriptInjection(cleaned, field);
   return cleaned;
 }
 
-/** Optional text: missing/empty becomes `fallback`, otherwise it is bounded. */
+/** Optional text: missing/empty becomes `fallback`, otherwise it is bounded and validated. */
 export function optionalText(
   value: unknown,
-  { field, max, fallback = "" }: TextOptions & { fallback?: string }
+  options: TextOptions & { fallback?: string }
 ): string {
+  const { fallback = "" } = options;
   if (value === undefined || value === null || value === "") return fallback;
-  return requiredText(value, { field, min: 1, max });
+  return requiredText(value, { ...options, min: 1 });
 }
 
-const EMAIL_PATTERN = /^[^\s@,;]+@[^\s@,;]+\.[a-z]{2,}$/i;
+const EMAIL_PATTERN = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
 export function emailValue(value: unknown, { field = "Email" }: { field?: string } = {}): string {
   const cleaned = requiredText(value, { field, max: 254 }).toLowerCase();
+  disallowCrlf(cleaned, field);
   if (!EMAIL_PATTERN.test(cleaned)) throw new ValidationError(`${field} is not a valid email address.`);
   return cleaned;
 }
@@ -50,6 +118,7 @@ const PHONE_PATTERN = /^\+?[0-9][0-9\s-]{6,17}[0-9]$/;
 
 export function phoneValue(value: unknown, { field = "Phone number" }: { field?: string } = {}): string {
   const cleaned = requiredText(value, { field, max: 20 });
+  disallowCrlf(cleaned, field);
   if (!PHONE_PATTERN.test(cleaned)) throw new ValidationError(`${field} is not valid.`);
   return cleaned;
 }
@@ -122,8 +191,8 @@ export function rejectUnknownKeys(body: Record<string, unknown>, allowed: readon
 const DEFAULT_BODY_LIMIT = 64 * 1024;
 
 /**
- * Reads a JSON body with a hard size cap, so a huge payload cannot exhaust
- * memory before validation ever runs.
+ * Reads a JSON body with a hard size cap, checks for prototype pollution,
+ * and validates that it is a proper object.
  */
 export async function readJsonBody(
   request: Request,
@@ -145,6 +214,10 @@ export async function readJsonBody(
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
     throw new ValidationError("The request body must be a JSON object.");
   }
+
+  // Defend against prototype pollution
+  assertNoPrototypePollution(parsed);
+
   return parsed as Record<string, unknown>;
 }
 

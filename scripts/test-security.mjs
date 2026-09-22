@@ -12,6 +12,9 @@ import {
   httpsUrl,
   rejectUnknownKeys,
   assertPasswordPolicy,
+  assertNoPrototypePollution,
+  disallowScriptInjection,
+  disallowCrlf,
   ValidationError,
 } from "../src/lib/security/validation.ts";
 
@@ -40,9 +43,10 @@ test("Security: Content Security Policy", () => {
   assert.ok(scriptDirective);
   assert.ok(!scriptDirective.includes("'unsafe-inline'"));
   assert.ok(!scriptDirective.includes("'unsafe-eval'"));
-  // Must disallow framing and plugins
+  // Must disallow framing, plugins, and inline event handlers
   assert.ok(cspProd.includes("frame-ancestors 'none'"));
   assert.ok(cspProd.includes("object-src 'none'"));
+  assert.ok(cspProd.includes("script-src-attr 'none'"));
 
   const headers = securityHeaders(nonce, true);
   const headerMap = Object.fromEntries(headers.map((h) => [h.key, h.value]));
@@ -86,6 +90,61 @@ test("Security: Same-Origin enforcement", () => {
     headers: { "sec-fetch-site": "cross-site" },
   });
   assert.equal(isSameOriginRequest(crossSite), false);
+});
+
+test("Security: Prototype Pollution Prevention", () => {
+  // Direct proto key
+  const protoPayload = JSON.parse('{"__proto__": {"admin": true}}');
+  assert.throws(() => assertNoPrototypePollution(protoPayload), ValidationError);
+
+  // Nested constructor key
+  const constructorPayload = JSON.parse('{"user": {"constructor": {"prototype": {"admin": true}}}}');
+  assert.throws(() => assertNoPrototypePollution(constructorPayload), ValidationError);
+
+  // Prototype key in array
+  const arrayPayload = JSON.parse('[{"valid": 1}, {"prototype": {"hacked": true}}]');
+  assert.throws(() => assertNoPrototypePollution(arrayPayload), ValidationError);
+
+  // Clean object passes
+  assert.doesNotThrow(() => assertNoPrototypePollution({ name: "Tile", price: 800, items: [1, 2, 3] }));
+});
+
+test("Security: Script & HTML Injection Prevention", () => {
+  // Script tags
+  assert.throws(() => disallowScriptInjection("<script>alert('xss')</script>", "Name"), ValidationError);
+  assert.throws(() => disallowScriptInjection("<SCRIPT SRC='https://evil.com/xss.js'></SCRIPT>", "Name"), ValidationError);
+
+  // javascript: protocol
+  assert.throws(() => disallowScriptInjection("javascript:alert(1)", "Link"), ValidationError);
+  assert.throws(() => disallowScriptInjection("  javascript : alert(1)", "Link"), ValidationError);
+
+  // Inline event handlers
+  assert.throws(() => disallowScriptInjection("<img src='x' onerror=alert(1)>", "Name"), ValidationError);
+  assert.throws(() => disallowScriptInjection("<svg onload='alert(1)'>", "Name"), ValidationError);
+
+  // iframes / objects / embeds
+  assert.throws(() => disallowScriptInjection("<iframe src='https://evil.com'></iframe>", "Name"), ValidationError);
+  assert.throws(() => disallowScriptInjection("<object data='evil.swf'></object>", "Name"), ValidationError);
+
+  // Clean text passes
+  assert.doesNotThrow(() => disallowScriptInjection("Beautiful PGVT 600x1200 Glossy Tile", "Name"));
+});
+
+test("Security: CRLF & Header Injection Prevention", () => {
+  // CRLF injection in single-line text
+  assert.throws(() => disallowCrlf("Rahul Sharma\r\nBcc: evil@attacker.com", "Name"), ValidationError);
+  assert.throws(() => disallowCrlf("Rahul\nSharma", "Name"), ValidationError);
+  assert.throws(() => disallowCrlf("Rahul\rSharma", "Name"), ValidationError);
+
+  // Clean single-line text passes
+  assert.doesNotThrow(() => disallowCrlf("Rahul Sharma", "Name"));
+
+  // emailValue rejects newlines
+  assert.throws(() => emailValue("user@example.com\r\nBcc:attacker@evil.com"), ValidationError);
+  assert.throws(() => emailValue("user@example.com\n"), ValidationError);
+
+  // phoneValue rejects newlines
+  assert.throws(() => phoneValue("+919120435950\r\n"), ValidationError);
 });
 
 test("Security: Server-Side Input Validation", () => {

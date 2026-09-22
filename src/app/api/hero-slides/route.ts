@@ -20,8 +20,8 @@ function slideImage(value: unknown) {
   return httpsUrl(value, { field: "Hero image", allowedHosts: allowedImageHosts() });
 }
 
-function cleanText(value: unknown, label: string, maximum: number): string {
-  return requiredText(value, { field: label, max: maximum });
+function cleanText(value: unknown, label: string, maximum: number, multiline = false): string {
+  return requiredText(value, { field: label, max: maximum, multiline });
 }
 
 /**
@@ -58,7 +58,7 @@ export async function POST(req: Request) {
       eyebrow: cleanText(body.eyebrow, "Eyebrow", 60),
       heading: cleanText(body.heading, "Heading", 90),
       accent: cleanText(body.accent, "Accent text", 90),
-      description: cleanText(body.description, "Description", 240),
+      description: cleanText(body.description, "Description", 240, true),
       isActive: body.isActive === false ? 0 : 1,
       sortOrder: existing.length,
     });

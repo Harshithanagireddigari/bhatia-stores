@@ -35,7 +35,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       changes.imagePublicId = typeof body.imagePublicId === "string" ? body.imagePublicId.slice(0, 200) : null;
     }
     for (const [key, maximum] of Object.entries(TEXT_LIMITS)) {
-      if (body[key] !== undefined) changes[key] = requiredText(body[key], { field: key, max: maximum });
+      if (body[key] !== undefined) changes[key] = requiredText(body[key], { field: key, max: maximum, multiline: key === "description" });
     }
     if (body.isActive !== undefined) changes.isActive = body.isActive ? 1 : 0;
     if (body.sortOrder !== undefined) changes.sortOrder = intValue(body.sortOrder, { field: "Slide order", min: 0, max: 99 });

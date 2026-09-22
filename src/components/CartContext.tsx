@@ -29,6 +29,40 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | null>(null);
 
+/** Validate and sanitize items loaded from client storage to prevent state manipulation. */
+function sanitizeCartItems(data: unknown): CartItem[] {
+  if (!Array.isArray(data)) return [];
+  const safe: CartItem[] = [];
+  for (const item of data) {
+    if (
+      item &&
+      typeof item === "object" &&
+      typeof item.productId === "string" &&
+      item.productId.length > 0 &&
+      item.productId.length < 100 &&
+      !item.productId.includes("__proto__") &&
+      typeof item.name === "string" &&
+      typeof item.price === "number" &&
+      Number.isFinite(item.price) &&
+      item.price >= 0 &&
+      typeof item.image === "string" &&
+      typeof item.quantity === "number" &&
+      Number.isInteger(item.quantity) &&
+      item.quantity > 0 &&
+      item.quantity <= 999
+    ) {
+      safe.push({
+        productId: item.productId,
+        name: item.name.slice(0, 200),
+        price: item.price,
+        image: item.image.slice(0, 500),
+        quantity: item.quantity,
+      });
+    }
+  }
+  return safe;
+}
+
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [mounted, setMounted] = useState(false);
@@ -38,7 +72,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const stored = localStorage.getItem("bhatia_cart");
     if (stored) {
       try {
-        setItems(JSON.parse(stored));
+        setItems(sanitizeCartItems(JSON.parse(stored)));
       } catch {
         setItems([]);
       }

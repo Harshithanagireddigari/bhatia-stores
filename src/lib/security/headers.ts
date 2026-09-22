@@ -53,6 +53,7 @@ export function buildContentSecurityPolicy({ nonce, production }: CspOptions): s
     "frame-ancestors": ["'none'"],
     "base-uri": ["'self'"],
     "form-action": ["'self'"],
+    "script-src-attr": ["'none'"],
   };
 
   if (production) directives["upgrade-insecure-requests"] = [];

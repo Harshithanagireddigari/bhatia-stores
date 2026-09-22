@@ -19,6 +19,7 @@ import { isSameOriginRequest } from "@/lib/security/origin";
  */
 
 const PRODUCTION = process.env.NODE_ENV === "production";
+const DANGEROUS_PATH = /[\0]|%00|\.\.|\/\.\//;
 
 function blocked(message: string, status: number) {
   return NextResponse.json(
@@ -34,7 +35,12 @@ function blocked(message: string, status: number) {
 }
 
 export function proxy(request: NextRequest) {
-  if (request.nextUrl.pathname.startsWith("/api/") && !isSameOriginRequest(request)) {
+  const pathname = request.nextUrl.pathname;
+  if (DANGEROUS_PATH.test(pathname) || DANGEROUS_PATH.test(request.url)) {
+    return blocked("Invalid request path.", 400);
+  }
+
+  if (pathname.startsWith("/api/") && !isSameOriginRequest(request)) {
     return blocked("Cross-origin requests are not allowed.", 403);
   }
 
