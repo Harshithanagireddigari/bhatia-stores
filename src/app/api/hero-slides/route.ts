@@ -1,55 +1,70 @@
-import { NextResponse } from "next/server";
 import { asc, eq } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import { db } from "@/db";
 import { heroSlides } from "@/db/schema";
-import { getSessionUser } from "@/lib/auth";
+import { requireAdmin } from "@/lib/security/guards";
+import { apiFailure, jsonResponse } from "@/lib/security/http";
+import { httpsUrl, readJsonBody, rejectUnknownKeys, requiredText } from "@/lib/security/validation";
 
-function isExternalImageUrl(value: unknown): value is string {
-  try { return new URL(String(value)).protocol === "https:"; } catch { return false; }
+const SLIDE_FIELDS = ["imageUrl", "imagePublicId", "eyebrow", "heading", "accent", "description", "isActive", "sortOrder"] as const;
+const MAX_SLIDES = 6;
+
+function allowedImageHosts(): string[] {
+  return (process.env.IMAGE_ALLOWED_HOSTS ?? "res.cloudinary.com")
+    .split(",")
+    .map((host) => host.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function slideImage(value: unknown) {
+  return httpsUrl(value, { field: "Hero image", allowedHosts: allowedImageHosts() });
 }
 
 function cleanText(value: unknown, label: string, maximum: number): string {
-  if (typeof value !== "string") throw new Error(`Enter a ${label} of up to ${maximum} characters.`);
-  const cleaned = value.trim();
-  if (!cleaned || cleaned.length > maximum) throw new Error(`Enter a ${label} of up to ${maximum} characters.`);
-  return cleaned;
+  return requiredText(value, { field: label, max: maximum });
 }
 
-async function isAdmin() {
-  const user = await getSessionUser();
-  return user?.role === "admin";
-}
-
+/**
+ * Public read returns only active slides. `?all=true` is an admin-only view,
+ * and that check happens on the server — the admin UI hiding the toggle is
+ * cosmetic.
+ */
 export async function GET(req: Request) {
   const includeInactive = new URL(req.url).searchParams.get("all") === "true";
-  if (includeInactive && !(await isAdmin())) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+  if (includeInactive) {
+    const gate = await requireAdmin();
+    if (!gate.ok) return gate.response;
+  }
   const slides = await db.select().from(heroSlides).orderBy(asc(heroSlides.sortOrder), asc(heroSlides.createdAt));
-  return NextResponse.json(includeInactive ? slides : slides.filter((slide) => slide.isActive === 1));
+  return jsonResponse(includeInactive ? slides : slides.filter((slide) => slide.isActive === 1));
 }
 
 export async function POST(req: Request) {
-  if (!(await isAdmin())) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+  const gate = await requireAdmin();
+  if (!gate.ok) return gate.response;
+
   try {
-    const body = await req.json();
-    if (!isExternalImageUrl(body.imageUrl)) return NextResponse.json({ error: "Upload a hero image first." }, { status: 400 });
+    const body = await readJsonBody(req);
+    rejectUnknownKeys(body, SLIDE_FIELDS);
     const existing = await db.select({ id: heroSlides.id }).from(heroSlides);
-    if (existing.length >= 6) return NextResponse.json({ error: "You can have up to six hero slides. Remove one before adding another." }, { status: 400 });
+    if (existing.length >= MAX_SLIDES) {
+      return jsonResponse({ error: `You can have up to ${MAX_SLIDES} hero slides. Remove one before adding another.` });
+    }
     const id = uuidv4();
     await db.insert(heroSlides).values({
       id,
-      imageUrl: body.imageUrl,
-      imagePublicId: typeof body.imagePublicId === "string" ? body.imagePublicId : null,
-      eyebrow: cleanText(body.eyebrow, "eyebrow", 60),
-      heading: cleanText(body.heading, "heading", 90),
-      accent: cleanText(body.accent, "accent text", 90),
-      description: cleanText(body.description, "description", 240),
+      imageUrl: slideImage(body.imageUrl),
+      imagePublicId: typeof body.imagePublicId === "string" ? body.imagePublicId.slice(0, 200) : null,
+      eyebrow: cleanText(body.eyebrow, "Eyebrow", 60),
+      heading: cleanText(body.heading, "Heading", 90),
+      accent: cleanText(body.accent, "Accent text", 90),
+      description: cleanText(body.description, "Description", 240),
       isActive: body.isActive === false ? 0 : 1,
       sortOrder: existing.length,
     });
     const slide = await db.select().from(heroSlides).where(eq(heroSlides.id, id)).limit(1);
-    return NextResponse.json(slide[0], { status: 201 });
+    return jsonResponse(slide[0], 201);
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Could not save the hero slide." }, { status: 400 });
+    return apiFailure("hero-slides.create", error);
   }
 }

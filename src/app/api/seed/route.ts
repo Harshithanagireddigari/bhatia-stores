@@ -1,21 +1,42 @@
-import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { users, products } from "@/db/schema";
-import { hashPassword } from "@/lib/auth";
+import { hashPassword, safeEqual } from "@/lib/auth";
 import { v4 as uuidv4 } from "uuid";
 import { eq } from "drizzle-orm";
 import { getSessionUser } from "@/lib/auth";
+import { apiFailure, jsonError, jsonResponse, notFound } from "@/lib/security/http";
 
+export const dynamic = "force-dynamic";
+
+/**
+ * Seeding route: strictly disabled in production.
+ *
+ * In development, requires POST and admin authentication or a configured
+ * `x-seed-secret` header. Never returns plaintext credentials in the response.
+ */
 export async function GET() {
+  return notFound();
+}
+
+export async function POST(req: Request) {
   if (process.env.NODE_ENV === "production") {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return notFound();
   }
-  const user = await getSessionUser();
-  if (!user || user.role !== "admin") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  // Check authorization: either admin session or SEED_SECRET header
+  const seedSecret = process.env.SEED_SECRET;
+  const providedSecret = req.headers.get("x-seed-secret");
+  const hasSecretAuth =
+    Boolean(seedSecret && providedSecret && safeEqual(providedSecret, seedSecret));
+
+  if (!hasSecretAuth) {
+    const user = await getSessionUser();
+    if (!user || user.role !== "admin") {
+      return jsonError("Forbidden", 403);
+    }
   }
+
   try {
-    // Check if already seeded
     const existingAdmin = await db
       .select()
       .from(users)
@@ -23,31 +44,32 @@ export async function GET() {
       .limit(1);
 
     if (existingAdmin[0]) {
-      return NextResponse.json({ message: "Already seeded" });
+      return jsonResponse({ message: "Already seeded" });
     }
 
     const adminId = uuidv4();
     const userId = uuidv4();
 
-    // Create admin user
+    // Passwords hashed with bcrypt cost factor 12
+    const defaultAdminPassword = process.env.INITIAL_ADMIN_PASSWORD || "AdminBhatia@2026!";
+    const defaultUserPassword = process.env.INITIAL_USER_PASSWORD || "UserBhatia@2026!";
+
     await db.insert(users).values({
       id: adminId,
       name: "Admin Bhatia",
       email: "admin@bhatia.com",
-      password: await hashPassword("admin123"),
+      password: await hashPassword(defaultAdminPassword),
       role: "admin",
     });
 
-    // Create demo customer
     await db.insert(users).values({
       id: userId,
       name: "Rahul Sharma",
       email: "user@bhatia.com",
-      password: await hashPassword("user123"),
+      password: await hashPassword(defaultUserPassword),
       role: "customer",
     });
 
-    // Seed products
     const sampleProducts = [
       { name: "Wireless Headphones", description: "Premium noise-cancelling wireless headphones with 30-hour battery life. Crystal clear audio with deep bass.", price: "2499.00", image: "/products/catalog/bhatia-catalogue-01.jpg", category: "Electronics", stock: 50 },
       { name: "Smart Watch Pro", description: "Feature-packed smartwatch with heart rate monitoring, GPS tracking, and 7-day battery. Water resistant up to 50m.", price: "4999.00", image: "/products/catalog/bhatia-catalogue-02.jpg", category: "Electronics", stock: 30 },
@@ -70,9 +92,11 @@ export async function GET() {
       });
     }
 
-    return NextResponse.json({ message: "Seeded successfully!", adminEmail: "admin@bhatia.com", adminPassword: "admin123", userEmail: "user@bhatia.com", userPassword: "user123" });
+    return jsonResponse({
+      ok: true,
+      message: "Database seeded successfully. Credentials configured via environment variables.",
+    });
   } catch (error) {
-    console.error("Seed error:", error);
-    return NextResponse.json({ error: "Seed failed" }, { status: 500 });
+    return apiFailure("seed", error);
   }
 }

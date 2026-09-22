@@ -1,7 +1,12 @@
-import { NextResponse } from "next/server";
 import { clearSession } from "@/lib/auth";
+import { apiFailure, jsonResponse } from "@/lib/security/http";
 
+/** Deletes the session row server-side as well as the browser cookie. */
 export async function POST() {
-  await clearSession();
-  return NextResponse.json({ success: true });
+  try {
+    await clearSession();
+    return jsonResponse({ success: true });
+  } catch (error) {
+    return apiFailure("auth.logout", error);
+  }
 }

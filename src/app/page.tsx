@@ -4,6 +4,7 @@ import { ArrowRight, Bath, Check, Grid3X3, MessageCircle, ShieldCheck, Sparkles,
 import { db } from "@/db";
 import { heroSlides, products } from "@/db/schema";
 import Hero from "@/components/Hero";
+import { logServerError } from "@/lib/security/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -14,10 +15,20 @@ const categories = [
 ];
 
 export default async function HomePage() {
-  const [latestProducts, activeHeroSlides] = await Promise.all([
-    db.select().from(products).orderBy(desc(products.createdAt)).limit(4),
-    db.select().from(heroSlides).orderBy(heroSlides.sortOrder).then((slides) => slides.filter((slide) => slide.isActive === 1)),
-  ]);
+  let latestProducts: (typeof products.$inferSelect)[] = [];
+  let activeHeroSlides: (typeof heroSlides.$inferSelect)[] = [];
+
+  try {
+    const results = await Promise.all([
+      db.select().from(products).orderBy(desc(products.createdAt)).limit(4),
+      db.select().from(heroSlides).orderBy(heroSlides.sortOrder).then((slides) => slides.filter((slide) => slide.isActive === 1)),
+    ]);
+    latestProducts = results[0];
+    activeHeroSlides = results[1];
+  } catch (err) {
+    logServerError("home.load", err);
+  }
+
   const imageUrls = latestProducts.map((product) => product.image).filter((image) => image.startsWith("https://"));
   return <main className="overflow-hidden bg-[#f8f6f1] text-[#252322]"><Hero slides={activeHeroSlides} />
     <section className="border-y border-[#ded8cd] bg-[#fdfcf9] py-5"><div className="mx-auto grid max-w-7xl grid-cols-2 gap-y-4 px-6 text-center sm:grid-cols-4">{["Curated premium brands", "Expert design guidance", "Secure checkout", "WhatsApp assistance"].map((item) => <p key={item} className="border-[#ded8cd] px-3 text-[11px] font-semibold uppercase tracking-[.12em] text-[#69645c] sm:border-r last:border-0">{item}</p>)}</div></section>

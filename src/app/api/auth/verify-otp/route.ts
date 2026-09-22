@@ -1,26 +1,43 @@
-import { NextResponse } from "next/server";
 import { getUserByEmail, setSessionCookie } from "@/lib/auth";
-import { verifyOtpAnswer } from "@/lib/otp";
+import { verifyOtpAnswer, otpLoginEnabled } from "@/lib/otp";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { apiFailure, jsonError, jsonResponse, notFound, tooManyRequests } from "@/lib/security/http";
+import { publicUser } from "@/lib/security/guards";
+import { emailValue, readJsonBody, rejectUnknownKeys } from "@/lib/security/validation";
 
+/**
+ * OTP sign-in.
+ *
+ * Disabled unless `ENABLE_OTP_LOGIN=true`: a passwordless endpoint that signs
+ * in any address it is given is too dangerous to leave reachable. When it is
+ * disabled the route answers 404, so it does not advertise itself.
+ */
 export async function POST(req: Request) {
+  if (!otpLoginEnabled()) return notFound();
+
   try {
-    const { email, otp } = await req.json();
-    if (!email || !otp) {
-      return NextResponse.json({ error: "Email and OTP required" }, { status: 400 });
+    const body = await readJsonBody(req);
+    rejectUnknownKeys(body, ["email", "otp"]);
+    const email = emailValue(body.email, { field: "Email" });
+
+    const { limited, retryAfterSeconds } = await checkRateLimit(req, "verify-otp", {
+      limit: 5,
+      windowMs: 15 * 60_000,
+      subject: email,
+    });
+    if (limited) return tooManyRequests(retryAfterSeconds);
+
+    const otp = typeof body.otp === "string" ? body.otp.trim() : "";
+    if (!(await verifyOtpAnswer(email, otp))) {
+      return jsonError("Invalid or expired OTP");
     }
-    const valid = await verifyOtpAnswer(email, otp);
-    if (!valid) {
-      return NextResponse.json({ error: "Invalid or expired OTP" }, { status: 400 });
-    }
+
     const user = await getUserByEmail(email);
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-    // Log the user in by creating a session cookie.
+    if (!user) return notFound("Account");
+
     await setSessionCookie(user.id);
-    return NextResponse.json({ success: true, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
-  } catch (e) {
-    console.error(e);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return jsonResponse({ success: true, user: publicUser(user) });
+  } catch (error) {
+    return apiFailure("auth.verify-otp", error);
   }
 }

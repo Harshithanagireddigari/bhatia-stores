@@ -1,3 +1,5 @@
+import { logMissingConfig, logServerError } from "./security/logger";
+
 type OrderEmail = {
   id: string;
   customerName: string;
@@ -15,14 +17,24 @@ function money(value: string) {
 }
 
 function escapeHtml(value: string) {
-  return value.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]!);
+  return value.replace(
+    /[&<>"']/g,
+    (character) =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      }[character]!)
+  );
 }
 
 async function sendEmail(to: string, subject: string, html: string, text: string) {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.EMAIL_FROM;
   if (!apiKey || !from) {
-    console.warn("Order email skipped: RESEND_API_KEY or EMAIL_FROM is not configured.");
+    logMissingConfig("email", "RESEND_API_KEY or EMAIL_FROM");
     return;
   }
 
@@ -32,7 +44,9 @@ async function sendEmail(to: string, subject: string, html: string, text: string
     body: JSON.stringify({ from, to: [to], subject, html, text }),
   });
   if (!response.ok) {
-    throw new Error(`Resend rejected the email (${response.status}): ${await response.text()}`);
+    const errorText = await response.text().catch(() => "");
+    const safeError = errorText.slice(0, 150);
+    throw new Error(`Resend rejected the email (${response.status}): ${safeError}`);
   }
 }
 
@@ -43,7 +57,7 @@ export async function sendPasswordResetEmail({ to, name, resetUrl }: { to: strin
     to,
     "Reset your Bhatia Stores password",
     `<h1>Reset your password</h1><p>Hello ${safeName},</p><p>Use the link below to set a new Bhatia Stores password. This link expires in one hour and can be used only once.</p><p><a href="${safeUrl}">Reset password</a></p><p>If you did not request this, you can safely ignore this email.</p>`,
-    `Hello ${name},\n\nReset your Bhatia Stores password using this link (valid for one hour):\n${resetUrl}\n\nIf you did not request this, you can safely ignore this email.`,
+    `Hello ${name},\n\nReset your Bhatia Stores password using this link (valid for one hour):\n${resetUrl}\n\nIf you did not request this, you can safely ignore this email.`
   );
 }
 
@@ -65,5 +79,7 @@ export async function sendOrderNotifications(order: OrderEmail) {
 
   const notifications = [sendEmail(order.customerEmail, `Order #${shortId} received`, customerHtml, customerText)];
   if (adminEmail) notifications.push(sendEmail(adminEmail, `New order #${shortId}`, adminHtml, adminText));
-  await Promise.all(notifications);
+  await Promise.all(notifications).catch((err) => {
+    logServerError("email.send", err);
+  });
 }

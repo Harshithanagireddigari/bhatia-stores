@@ -15,7 +15,6 @@ export default function ContactPage() {
     setLoading(true);
     try {
       // Placeholder: In production integrate with an email service.
-      console.log(`📧 Email contact requested: ${email}`);
       toast.success("Your message request was logged. We'll get back to you shortly.");
       setEmailSent(true);
     } catch {

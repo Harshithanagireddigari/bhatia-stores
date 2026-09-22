@@ -1,19 +1,23 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 
-const databaseUrl = process.env.DATABASE_URL;
+const databaseUrl =
+  process.env.DATABASE_URL ||
+  "postgresql://postgres:postgres@127.0.0.1:5432/dummy_build";
 
-if (!databaseUrl) {
-  throw new Error("DATABASE_URL is required");
-}
-
-// pg will change the meaning of sslmode=require in its next major release.
-// Keep the current strict, certificate-and-hostname-verified connection
-// behavior explicit without requiring a developer to expose or rewrite the
-// database secret in .env.local.
-const connectionUrl = new URL(databaseUrl);
-if (["prefer", "require", "verify-ca"].includes(connectionUrl.searchParams.get("sslmode") ?? "")) {
-  connectionUrl.searchParams.set("sslmode", "verify-full");
+let connectionString = databaseUrl;
+try {
+  const connectionUrl = new URL(databaseUrl);
+  if (
+    ["prefer", "require", "verify-ca"].includes(
+      connectionUrl.searchParams.get("sslmode") ?? ""
+    )
+  ) {
+    connectionUrl.searchParams.set("sslmode", "verify-full");
+  }
+  connectionString = connectionUrl.toString();
+} catch {
+  // Use raw connection string if not a valid URL yet
 }
 
 const globalForDb = globalThis as typeof globalThis & {
@@ -23,7 +27,7 @@ const globalForDb = globalThis as typeof globalThis & {
 export const pool =
   globalForDb.__arenaNextJsPostgresqlPool ??
   new Pool({
-    connectionString: connectionUrl.toString(),
+    connectionString,
   });
 
 if (process.env.NODE_ENV !== "production") {

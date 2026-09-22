@@ -1,24 +1,32 @@
 import { NextResponse } from "next/server";
 import { createUser, getUserByEmail, setSessionCookie } from "@/lib/auth";
 import { verifyCaptchaAnswer } from "@/lib/captcha";
-import { isRateLimited } from "@/lib/rate-limit";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { apiFailure, jsonError, jsonResponse, tooManyRequests } from "@/lib/security/http";
+import { publicUser } from "@/lib/security/guards";
+import { assertPasswordPolicy, emailValue, readJsonBody, rejectUnknownKeys, requiredText } from "@/lib/security/validation";
 
+/**
+ * Self-service registration. The role is always `customer`: it is never read
+ * from the request, so a crafted body cannot mint an admin account.
+ */
 export async function POST(req: Request) {
   try {
-    if (await isRateLimited(req, "register", 5, 15 * 60_000)) {
-      return NextResponse.json({ error: "Too many registration attempts. Please try again later." }, { status: 429 });
-    }
-    const { name, email, password, captchaAnswer } = await req.json();
-    if (!name || !email || !password) {
-      return NextResponse.json({ error: "All fields are required" }, { status: 400 });
-    }
+    const body = await readJsonBody(req);
+    rejectUnknownKeys(body, ["name", "email", "password", "captchaAnswer"]);
+    const name = requiredText(body.name, { field: "Name", max: 80 });
+    const email = emailValue(body.email, { field: "Email" });
+    assertPasswordPolicy(body.password);
 
-    if (password.length < 6) {
-      return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
-    }
+    const { limited, retryAfterSeconds } = await checkRateLimit(req, "register", {
+      limit: 5,
+      windowMs: 15 * 60_000,
+      subject: email,
+    });
+    if (limited) return tooManyRequests(retryAfterSeconds);
 
-    if (!(await verifyCaptchaAnswer(captchaAnswer))) {
-      return NextResponse.json({ error: "Please complete the human verification" }, { status: 400 });
+    if (!(await verifyCaptchaAnswer(body.captchaAnswer))) {
+      return jsonError("Please complete the human verification");
     }
 
     const existing = await getUserByEmail(email);
@@ -26,12 +34,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Email already registered" }, { status: 409 });
     }
 
-    const user = await createUser(name, email, password, "customer");
+    const user = await createUser(name, email, String(body.password), "customer");
     await setSessionCookie(user.id);
-
-    return NextResponse.json({ user }, { status: 201 });
+    return jsonResponse({ user: publicUser(user) }, 201);
   } catch (error) {
-    console.error("Register error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return apiFailure("auth.register", error);
   }
 }

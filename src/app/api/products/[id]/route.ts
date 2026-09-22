@@ -1,15 +1,12 @@
-import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { products } from "@/db/schema";
-import { getSessionUser } from "@/lib/auth";
 import { eq } from "drizzle-orm";
+import { requireAdmin } from "@/lib/security/guards";
+import { apiFailure, jsonResponse, notFound } from "@/lib/security/http";
+import { readJsonBody, rejectUnknownKeys } from "@/lib/security/validation";
+import { parseProductInput } from "@/lib/product-input";
 
-function isExternalImageUrl(value: unknown): value is string {
-  try {
-    const url = new URL(String(value));
-    return url.protocol === "https:";
-  } catch { return false; }
-}
+const PRODUCT_FIELDS = ["name", "description", "price", "image", "category", "stock"] as const;
 
 export async function GET(
   _req: Request,
@@ -17,55 +14,46 @@ export async function GET(
 ) {
   const { id } = await params;
   const result = await db.select().from(products).where(eq(products.id, id)).limit(1);
-  if (!result[0]) {
-    return NextResponse.json({ error: "Product not found" }, { status: 404 });
-  }
-  return NextResponse.json(result[0]);
+  if (!result[0]) return notFound("Product");
+  return jsonResponse(result[0]);
 }
 
+/** Admin-only update. Unknown keys are rejected, so `role`-style fields cannot be smuggled in. */
 export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const user = await getSessionUser();
-  if (!user || user.role !== "admin") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-  }
+  const gate = await requireAdmin();
+  if (!gate.ok) return gate.response;
 
   const { id } = await params;
   try {
-    const { name, description, price, image, category, stock } = await req.json();
-    if (image !== undefined && !isExternalImageUrl(image)) {
-      return NextResponse.json({ error: "Product images must use the image storage URL." }, { status: 400 });
-    }
-    const updateData: Record<string, unknown> = {};
-    if (name !== undefined) updateData.name = name;
-    if (description !== undefined) updateData.description = description;
-    if (price !== undefined) updateData.price = price.toString();
-    if (image !== undefined) updateData.image = image;
-    if (category !== undefined) updateData.category = category;
-    if (stock !== undefined) updateData.stock = stock;
+    const body = await readJsonBody(req);
+    rejectUnknownKeys(body, PRODUCT_FIELDS);
+    const input = parseProductInput(body, { partial: true });
+    if (!Object.keys(input).length) return jsonResponse({ error: "No changes submitted." });
 
-    await db.update(products).set(updateData).where(eq(products.id, id));
-
+    await db.update(products).set(input).where(eq(products.id, id));
     const updated = await db.select().from(products).where(eq(products.id, id)).limit(1);
-    return NextResponse.json(updated[0]);
+    return jsonResponse(updated[0]);
   } catch (error) {
-    console.error("Update product error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return apiFailure("products.update", error);
   }
 }
 
+/** Admin-only delete. */
 export async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const user = await getSessionUser();
-  if (!user || user.role !== "admin") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-  }
+  const gate = await requireAdmin();
+  if (!gate.ok) return gate.response;
 
   const { id } = await params;
-  await db.delete(products).where(eq(products.id, id));
-  return NextResponse.json({ success: true });
+  try {
+    await db.delete(products).where(eq(products.id, id));
+    return jsonResponse({ success: true });
+  } catch (error) {
+    return apiFailure("products.delete", error);
+  }
 }

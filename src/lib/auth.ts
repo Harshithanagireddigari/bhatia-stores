@@ -6,9 +6,23 @@ import { sessions } from "@/db/schema";
 import { and, eq, gt } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { assertPasswordPolicy } from "@/lib/security/validation";
+import { logServerEvent } from "@/lib/security/logger";
+import { safeEqual } from "./security/safe";
+
+export { safeEqual };
 
 const SESSION_COOKIE = "bhatia_session";
 const SESSION_MAX_AGE = 60 * 60 * 24 * 7;
+
+export type SessionUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: "admin" | "customer";
+};
+
+let warnedAboutSecret = false;
 
 function sessionSecret() {
   // DATABASE_URL is already a server-only, high-entropy credential. This
@@ -16,6 +30,10 @@ function sessionSecret() {
   // is configured; production should still set SESSION_SECRET explicitly.
   const secret = process.env.SESSION_SECRET || process.env.DATABASE_URL;
   if (!secret) throw new Error("SESSION_SECRET or DATABASE_URL is required");
+  if (!process.env.SESSION_SECRET && !warnedAboutSecret) {
+    warnedAboutSecret = true;
+    logServerEvent("auth", "SESSION_SECRET is not set; falling back to a derived server-only secret. Set SESSION_SECRET in production.");
+  }
   return secret;
 }
 
@@ -41,7 +59,7 @@ export async function createUser(
   role: "admin" | "customer" = "customer"
 ) {
   const id = uuidv4();
-  const hashedPassword = await hashPassword(password);
+  const hashedPassword = await hashPassword(assertPasswordPolicy(password));
   await db.insert(users).values({
     id,
     name,
@@ -61,12 +79,12 @@ export async function getUserByEmail(email: string) {
   return result[0] || null;
 }
 
-export async function getSessionUser(): Promise<{
-  id: string;
-  name: string;
-  email: string;
-  role: "admin" | "customer";
-} | null> {
+/**
+ * Validates the signed session cookie and confirms the session row and user
+ * still exist. The role always comes from the database, never from the cookie,
+ * so a stale cookie cannot keep an old `admin` role after it is revoked.
+ */
+export async function getSessionUser(): Promise<SessionUser | null> {
   const cookieStore = await cookies();
   const session = cookieStore.get(SESSION_COOKIE);
   if (!session?.value) return null;
@@ -74,9 +92,7 @@ export async function getSessionUser(): Promise<{
     const [value, signature] = session.value.split(".");
     if (!value || !signature) return null;
     const expected = signSession(value);
-    if (signature.length !== expected.length || !timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
-      return null;
-    }
+    if (!safeEqual(signature, expected)) return null;
     const decoded = JSON.parse(Buffer.from(value, "base64url").toString("utf-8")) as {
       userId?: string;
       sessionId?: string;
@@ -120,6 +136,9 @@ export async function setSessionCookie(userId: string) {
   await db.insert(sessions).values({ id: sessionId, userId, expiresAt });
   const value = Buffer.from(JSON.stringify({ userId, sessionId, expiresAt: expiresAt.getTime() })).toString("base64url");
   const token = `${value}.${signSession(value)}`;
+  // The session token never reaches JavaScript: httpOnly keeps it away from any
+  // injected script, secure keeps it off plain HTTP, and SameSite=strict blocks
+  // cross-site sends. Nothing sensitive is ever written to localStorage.
   cookieStore.set(SESSION_COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -127,6 +146,11 @@ export async function setSessionCookie(userId: string) {
     path: "/",
     maxAge: SESSION_MAX_AGE,
   });
+}
+
+/** Invalidates every stored session for a user, e.g. after a password reset. */
+export async function revokeUserSessions(userId: string) {
+  await db.delete(sessions).where(eq(sessions.userId, userId));
 }
 
 export async function clearSession() {
@@ -137,7 +161,7 @@ export async function clearSession() {
       const [value, signature] = token.split(".");
       if (value && signature) {
         const expected = signSession(value);
-        if (signature.length === expected.length && timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
+        if (safeEqual(signature, expected)) {
           const decoded = JSON.parse(Buffer.from(value, "base64url").toString("utf-8")) as { sessionId?: string };
           if (typeof decoded.sessionId === "string") {
             await db.delete(sessions).where(eq(sessions.id, decoded.sessionId));

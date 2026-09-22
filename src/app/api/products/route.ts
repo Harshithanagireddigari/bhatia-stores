@@ -1,66 +1,61 @@
-import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { products } from "@/db/schema";
-import { getSessionUser } from "@/lib/auth";
 import { v4 as uuidv4 } from "uuid";
 import { eq } from "drizzle-orm";
+import { requireAdmin } from "@/lib/security/guards";
+import { apiFailure, jsonResponse } from "@/lib/security/http";
+import { readJsonBody, rejectUnknownKeys } from "@/lib/security/validation";
+import { parseProductInput } from "@/lib/product-input";
 
-function isExternalImageUrl(value: unknown): value is string {
-  try {
-    const url = new URL(String(value));
-    return url.protocol === "https:";
-  } catch { return false; }
-}
+const PRODUCT_FIELDS = ["name", "description", "price", "image", "category", "stock"] as const;
 
+/**
+ * Public catalogue read, ordered by age and filtered by category/search.
+ * Only product columns are returned; nothing here is session-derived.
+ */
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const category = searchParams.get("category");
-  const search = searchParams.get("search")?.trim().toLowerCase().slice(0, 100);
+  const category = searchParams.get("category")?.trim().slice(0, 60);
+  const search = searchParams.get("search")?.trim().slice(0, 100);
 
-  let query = db.select().from(products).orderBy(products.createdAt);
-  if (category || search) {
-    const all = await query;
-    return NextResponse.json(all.filter((p) => {
-      const inCategory = !category || p.category === category;
-      const searchable = `${p.name} ${p.description} ${p.category}`.toLowerCase();
-      return inCategory && (!search || searchable.includes(search));
-    }));
-  }
-
-  const all = await query;
-  return NextResponse.json(all);
+  const rows = await db.select().from(products).orderBy(products.createdAt);
+  const needle = search?.toLowerCase();
+  const filtered = rows.filter((product) => {
+    const inCategory = !category || product.category === category;
+    const haystack = `${product.name} ${product.description} ${product.category}`.toLowerCase();
+    return inCategory && (!needle || haystack.includes(needle));
+  });
+  return jsonResponse(filtered);
 }
 
+/**
+ * Admin-only create. Authorisation is checked on the server before the body is
+ * even read, and every field is re-validated here regardless of what the admin
+ * form sent: hiding the button in the UI is not the control, this is.
+ */
 export async function POST(req: Request) {
-  const user = await getSessionUser();
-  if (!user || user.role !== "admin") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-  }
+  const gate = await requireAdmin();
+  if (!gate.ok) return gate.response;
 
   try {
-    const { name, description, price, image, category, stock } = await req.json();
-    if (!name || !description || !price || !image || !category) {
-      return NextResponse.json({ error: "All fields are required" }, { status: 400 });
-    }
-    if (!isExternalImageUrl(image)) {
-      return NextResponse.json({ error: "Upload the product image first. Product images must use the image storage URL." }, { status: 400 });
-    }
+    const body = await readJsonBody(req);
+    rejectUnknownKeys(body, PRODUCT_FIELDS);
+    const input = parseProductInput(body);
 
     const id = uuidv4();
     await db.insert(products).values({
       id,
-      name,
-      description,
-      price: price.toString(),
-      image,
-      category,
-      stock: stock || 0,
+      name: input.name!,
+      description: input.description!,
+      price: input.price!,
+      image: input.image!,
+      category: input.category!,
+      stock: input.stock ?? 0,
     });
 
     const created = await db.select().from(products).where(eq(products.id, id)).limit(1);
-    return NextResponse.json(created[0], { status: 201 });
+    return jsonResponse(created[0], 201);
   } catch (error) {
-    console.error("Create product error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return apiFailure("products.create", error);
   }
 }

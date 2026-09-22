@@ -8,8 +8,6 @@ export default async function AdminLayout({
 }) {
   const user = await getSessionUser();
 
-  console.log("ADMIN USER:", user);
-
   if (!user || user.role !== "admin") {
     redirect("/login");
   }

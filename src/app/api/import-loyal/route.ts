@@ -1,35 +1,43 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { Client } from "pg";
 import { randomUUID } from "node:crypto";
+import { safeEqual } from "@/lib/auth";
+import { apiFailure, jsonError, jsonResponse, notFound } from "@/lib/security/http";
 
-export async function GET(req: NextRequest) {
-  // Security: Only allow with secret token
-  const secret = req.headers.get("x-import-secret");
-  const expectedSecret = process.env.IMPORT_SECRET;
-  
-  if (!expectedSecret || secret !== expectedSecret) {
-    return NextResponse.json(
-      { error: "Unauthorized" }, 
-      { status: 401 }
-    );
+export const dynamic = "force-dynamic";
+
+export async function GET() {
+  return notFound();
+}
+
+export async function POST(req: NextRequest) {
+  // Security: Only allow in development or with explicit enable flag
+  if (
+    process.env.NODE_ENV === "production" &&
+    process.env.ENABLE_IMPORT_ROUTE !== "true"
+  ) {
+    return notFound();
   }
 
-  // Only allow in development or with explicit enable flag
-  if (process.env.NODE_ENV === "production" && 
-      process.env.ENABLE_IMPORT_ROUTE !== "true") {
-    return NextResponse.json(
-      { error: "Import route disabled in production" }, 
-      { status: 403 }
-    );
+  // Security: Constant-time comparison with secret token
+  const secret = req.headers.get("x-import-secret");
+  const expectedSecret = process.env.IMPORT_SECRET;
+
+  if (!expectedSecret || !secret || !safeEqual(secret, expectedSecret)) {
+    return jsonError("Unauthorized", 401);
+  }
+
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) {
+    return jsonError("Database not configured", 503);
   }
 
   try {
-    const client = new Client({ 
-      connectionString: process.env.DATABASE_URL 
+    const client = new Client({
+      connectionString: databaseUrl,
     });
     await client.connect();
 
-    // Copy the core logic from import-august-stock.mjs
     const reportedStock = [
       ["10503", 200], ["11109", 127], ["13115", 131],
       ["AGATE-114", 30], ["10539", 198], ["10579", 238], ["10693", 10],
@@ -55,22 +63,29 @@ export async function GET(req: NextRequest) {
       })),
     ];
 
-    async function upsertProduct(product: any) {
+    async function upsertProduct(product: {
+      name: string;
+      description: string;
+      price: string;
+      image: string;
+      category: string;
+      stock: number;
+    }) {
       const existing = await client.query(
-        "SELECT id FROM products WHERE name = $1 LIMIT 1", 
+        "SELECT id FROM products WHERE name = $1 LIMIT 1",
         [product.name]
       );
-      if (existing.rowCount) {
+      if (existing.rowCount && existing.rows[0]) {
         await client.query(
           "UPDATE products SET description = $1, price = $2, image = $3, category = $4, stock = $5 WHERE id = $6",
-          [product.description, product.price, product.image, product.category, product.stock, existing.rows[0].id],
+          [product.description, product.price, product.image, product.category, product.stock, existing.rows[0].id]
         );
         return "updated";
       }
       await client.query(
         `INSERT INTO products (id, name, description, price, image, category, stock)
          VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-        [randomUUID(), product.name, product.description, product.price, product.image, product.category, product.stock],
+        [randomUUID(), product.name, product.description, product.price, product.image, product.category, product.stock]
       );
       return "inserted";
     }
@@ -86,29 +101,25 @@ export async function GET(req: NextRequest) {
         price: "800.00",
         image: "/products/catalog/bhatia-catalogue-01.jpg",
         category: "Tiles & Sanitaryware",
-        stock,
+        stock: Number(stock),
       });
       outcome === "inserted" ? inserted++ : updated++;
     }
-    
+
     for (const tile of visualCatalogues) {
       const outcome = await upsertProduct({ ...tile, category: "Tiles & Sanitaryware", stock: 10 });
       outcome === "inserted" ? inserted++ : updated++;
     }
-    
+
     await client.query("COMMIT");
     await client.end();
 
-    return NextResponse.json({
+    return jsonResponse({
       message: "Import completed successfully",
       inserted,
-      updated
+      updated,
     });
   } catch (error) {
-    console.error("Import error:", error);
-    return NextResponse.json(
-      { error: "Import failed", details: String(error) }, 
-      { status: 500 }
-    );
+    return apiFailure("import-loyal", error);
   }
 }

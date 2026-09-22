@@ -17,10 +17,6 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [loggedIn, setLoggedIn] = useState(true);
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
   async function fetchOrders() {
     try {
       const res = await fetch("/api/orders");
@@ -36,6 +32,10 @@ export default function OrdersPage() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
 
   const statusColors: Record<string, string> = {
     pending: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",

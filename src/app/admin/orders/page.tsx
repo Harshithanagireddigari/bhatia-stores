@@ -25,10 +25,6 @@ export default function AdminOrdersPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
   async function fetchOrders() {
     try {
       const res = await fetch("/api/orders");
@@ -40,6 +36,10 @@ export default function AdminOrdersPage() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
 
   async function updateStatus(orderId: string, newStatus: string) {
     setUpdatingId(orderId);
