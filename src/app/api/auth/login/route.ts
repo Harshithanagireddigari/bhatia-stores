@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getUserByEmail, verifyPassword, setSessionCookie } from "@/lib/auth";
 import { verifyCaptchaAnswer } from "@/lib/captcha";
 import { isRateLimited } from "@/lib/rate-limit";
+import { sanitizeEmail, detectInjectionPatterns } from "@/lib/security";
 
 export async function POST(req: Request) {
   try {
@@ -9,14 +10,24 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Too many login attempts. Please try again later." }, { status: 429 });
     }
     const { email, password, captchaAnswer } = await req.json();
-    if (!email || !password) {
+    
+    // Security: Check for injection patterns
+    if (typeof email === 'string' && detectInjectionPatterns(email)) {
+      return NextResponse.json({ error: "Invalid input detected" }, { status: 400 });
+    }
+    if (typeof password === 'string' && detectInjectionPatterns(password)) {
+      return NextResponse.json({ error: "Invalid input detected" }, { status: 400 });
+    }
+    
+    const sanitizedEmail = sanitizeEmail(email);
+    if (!sanitizedEmail || !password) {
       return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
     }
     if (!(await verifyCaptchaAnswer(captchaAnswer))) {
       return NextResponse.json({ error: "Please complete the human verification" }, { status: 400 });
     }
 
-    const user = await getUserByEmail(email);
+    const user = await getUserByEmail(sanitizedEmail);
     if (!user) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }

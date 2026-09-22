@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useCart } from "@/components/CartContext";
 import { useWishlist } from "@/components/WishlistContext";
 import { toast } from "sonner";
+import ProductImageZoom from "@/components/ProductImageZoom";
 
 interface Product {
   id: string;
@@ -103,15 +104,11 @@ export default function ProductPage({
 
       <div className="grid gap-10 md:grid-cols-2">
         {/* Product image */}
-        <div className="flex min-h-[24rem] items-center justify-center overflow-hidden rounded-2xl bg-gray-100 p-4 dark:bg-gray-800">
+        <div className="overflow-hidden rounded-2xl bg-gray-100 p-4 dark:bg-gray-800">
           {isProductImage(product.image) ? (
-            <img
-              src={product.image}
-              alt={product.name}
-              className="max-h-[32rem] w-full rounded-xl object-contain"
-            />
+            <ProductImageZoom src={product.image} alt={product.name} />
           ) : (
-            <span className="text-[120px]">{product.image}</span>
+            <div className="flex min-h-[24rem] items-center justify-center"><span className="text-[120px]">{product.image}</span></div>
           )}
         </div>
 
@@ -168,7 +165,7 @@ export default function ProductPage({
                   addProductToCart();
                   toast.success(`Added ${quantity} to cart!`);
                 }}
-                className="rounded-full bg-primary-600 px-8 py-3 font-semibold text-white transition hover:bg-primary-700"
+                className="rounded-full bg-[#4f46e5] px-8 py-3 font-semibold text-white shadow-sm transition hover:bg-[#4338ca] focus:outline-none focus:ring-2 focus:ring-[#4f46e5] focus:ring-offset-2"
               >
                 Add to Cart
               </button>
@@ -180,7 +177,7 @@ export default function ProductPage({
                   addProductToCart();
                   router.push("/checkout");
                 }}
-                className="rounded-full border border-primary-600 px-8 py-3 font-semibold text-primary-600 transition hover:bg-indigo-50 dark:text-primary-400 dark:hover:bg-indigo-950/40"
+                className="rounded-full border border-[#4f46e5] px-8 py-3 font-semibold text-[#4f46e5] transition hover:bg-indigo-50 dark:text-indigo-300 dark:hover:bg-indigo-950/40"
               >
                 Buy Now
               </button>

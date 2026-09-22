@@ -1,0 +1,28 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import Sidebar from "@/components/admin/Sidebar";
+import Header from "@/components/admin/Header";
+
+type Settings = { storeName: string; supportEmail: string; whatsapp: string; prepaidEnabled: boolean; codEnabled: boolean; codLimit: string; homepageSections: boolean; maintenanceMode: boolean };
+const defaults: Settings = { storeName: "Bhatia Stores", supportEmail: "", whatsapp: "", prepaidEnabled: true, codEnabled: true, codLimit: "", homepageSections: true, maintenanceMode: false };
+
+export default function AdminSettingsPage() {
+  const [settings, setSettings] = useState<Settings>(defaults);
+  const [saving, setSaving] = useState(false);
+  useEffect(() => { fetch("/api/admin/settings").then((r) => r.ok ? r.json() : {}).then((data: { store?: Partial<Settings> }) => setSettings({ ...defaults, ...data.store })).catch(() => {}); }, []);
+  async function save() { setSaving(true); try { const res = await fetch("/api/admin/settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key: "store", value: settings }) }); if (!res.ok) throw new Error(); toast.success("Store controls saved"); } catch { toast.error("Could not save settings"); } finally { setSaving(false); } }
+  const toggle = (key: "prepaidEnabled" | "codEnabled" | "homepageSections" | "maintenanceMode") => setSettings((s) => ({ ...s, [key]: !s[key] }));
+  return <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900"><Sidebar /><div className="ml-64 flex-1"><Header /><main className="max-w-6xl p-6">
+    <div className="mb-6"><h1 className="text-2xl font-bold text-gray-900 dark:text-white">Store controls</h1><p className="text-sm text-gray-500">Configure checkout, communications, homepage, and maintenance from one place.</p></div>
+    <div className="grid gap-6 lg:grid-cols-2">
+      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800"><h2 className="font-semibold text-gray-900 dark:text-white">Store & notifications</h2><div className="mt-4 grid gap-4"><Field label="Store name" value={settings.storeName} onChange={(storeName) => setSettings({ ...settings, storeName })}/><Field label="Support email" type="email" value={settings.supportEmail} onChange={(supportEmail) => setSettings({ ...settings, supportEmail })}/><Field label="WhatsApp number" value={settings.whatsapp} onChange={(whatsapp) => setSettings({ ...settings, whatsapp })}/></div></section>
+      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800"><h2 className="font-semibold text-gray-900 dark:text-white">Payments & delivery</h2><div className="mt-4 space-y-4"><Toggle label="Prepaid payments" description="Accept Razorpay payments at checkout." checked={settings.prepaidEnabled} onChange={() => toggle("prepaidEnabled")}/><Toggle label="Cash on delivery" description="Allow customers to pay when their order arrives." checked={settings.codEnabled} onChange={() => toggle("codEnabled")}/><Field label="COD order limit (₹)" type="number" value={settings.codLimit} onChange={(codLimit) => setSettings({ ...settings, codLimit })}/></div></section>
+      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800"><h2 className="font-semibold text-gray-900 dark:text-white">Homepage</h2><div className="mt-4"><Toggle label="Homepage content sections" description="Keep curated sections and featured products visible." checked={settings.homepageSections} onChange={() => toggle("homepageSections")}/><p className="mt-4 text-sm text-indigo-600"><a href="/admin/launchpad">Manage hero images, copy, CTA visibility, and slide order →</a></p></div></section>
+      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800"><h2 className="font-semibold text-gray-900 dark:text-white">Database & maintenance</h2><div className="mt-4"><Toggle label="Maintenance mode" description="Use only while planned maintenance is in progress." checked={settings.maintenanceMode} onChange={() => toggle("maintenanceMode")}/><p className="mt-4 text-sm text-gray-500">Database schema updates are run through the deployment pipeline. This control preserves the store-wide maintenance preference.</p></div></section>
+    </div><button onClick={save} disabled={saving} className="mt-6 rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white disabled:opacity-50">{saving ? "Saving…" : "Save store controls"}</button>
+  </main></div></div>;
+}
+function Field({ label, value, onChange, type = "text" }: { label: string; value: string; onChange: (value: string) => void; type?: string }) { return <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}<input type={type} value={value} onChange={(e) => onChange(e.target.value)} className="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-900 dark:text-white" /></label>; }
+function Toggle({ label, description, checked, onChange }: { label: string; description: string; checked: boolean; onChange: () => void }) { return <div className="flex items-center justify-between gap-4"><div><p className="text-sm font-medium text-gray-900 dark:text-white">{label}</p><p className="text-xs text-gray-500">{description}</p></div><button type="button" onClick={onChange} aria-pressed={checked} className={`h-7 w-12 rounded-full p-1 transition ${checked ? "bg-indigo-600" : "bg-gray-300"}`}><span className={`block h-5 w-5 rounded-full bg-white transition ${checked ? "translate-x-5" : ""}`} /></button></div>; }

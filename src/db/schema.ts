@@ -121,3 +121,34 @@ export const rateLimits = pgTable("rate_limits", {
   count: integer("count").notNull(),
   resetAt: timestamp("reset_at").notNull(),
 });
+
+export const categories = pgTable("categories", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  slug: text("slug").notNull().unique(),
+  image: text("image"),
+  description: text("description").notNull().default(""),
+  isVisible: integer("is_visible").notNull().default(1),
+  displayOnHomepage: integer("display_on_homepage").notNull().default(1),
+  displayInShop: integer("display_in_shop").notNull().default(1),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const offers = pgTable("offers", {
+  id: text("id").primaryKey(),
+  title: text("title").notNull(),
+  code: text("code").unique(),
+  discountType: text("discount_type").notNull().default("percent"),
+  discountValue: numeric("discount_value", { precision: 10, scale: 2 }).notNull(),
+  expiresAt: timestamp("expires_at"),
+  isActive: integer("is_active").notNull().default(1),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// A small, extensible key/value store for store-wide admin controls.
+export const storeSettings = pgTable("store_settings", {
+  key: text("key").primaryKey(),
+  value: jsonb("value").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});

@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     }
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    const folder = assetType === "hero" ? "bhatia-hero" : "bhatia-products";
+    const folder = assetType === "hero" ? "bhatia-hero" : assetType === "category" ? "bhatia-categories" : "bhatia-products";
     const result: any = await new Promise((resolve, reject) => {
       cloudinary.uploader
         .upload_stream(

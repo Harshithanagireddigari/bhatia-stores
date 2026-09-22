@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { orders, orderItems, paymentOrders } from "@/db/schema";
+import { orders, orderItems, paymentOrders, storeSettings } from "@/db/schema";
 import { getSessionUser } from "@/lib/auth";
 import { v4 as uuidv4 } from "uuid";
 import { and, eq, gt } from "drizzle-orm";
@@ -59,6 +59,16 @@ export async function POST(req: Request) {
       return { product, quantity };
     });
     const total = verifiedItems.reduce((sum, item) => sum + Number(item.product.price) * item.quantity, 0);
+    const storeControl = await db.select().from(storeSettings).where(eq(storeSettings.key, "store")).limit(1);
+    const controls = (storeControl[0]?.value || {}) as { prepaidEnabled?: boolean; codEnabled?: boolean; codLimit?: string };
+    if (paymentMethod === "cod") {
+      if (controls.codEnabled === false) return NextResponse.json({ error: "Cash on delivery is currently unavailable" }, { status: 400 });
+      const codLimit = Number(controls.codLimit);
+      if (Number.isFinite(codLimit) && codLimit > 0 && total > codLimit) return NextResponse.json({ error: `Cash on delivery is available up to ₹${codLimit}` }, { status: 400 });
+    }
+    if (paymentMethod === "razorpay" && controls.prepaidEnabled === false) {
+      return NextResponse.json({ error: "Prepaid payments are currently unavailable" }, { status: 400 });
+    }
     if (paymentMethod === "razorpay") {
       const razorpaySecret = process.env.RAZORPAY_KEY_SECRET;
       const razorpayKeyId = process.env.RAZORPAY_KEY_ID;

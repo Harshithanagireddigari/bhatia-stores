@@ -1,27 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Client } from "pg";
-import { randomUUID } from "node:crypto";
 
 export async function GET(req: NextRequest) {
-  // Security: Only allow with secret token
-  const secret = req.headers.get("x-import-secret");
-  const expectedSecret = process.env.IMPORT_SECRET;
-  
-  if (!expectedSecret || secret !== expectedSecret) {
-    return NextResponse.json(
-      { error: "Unauthorized" }, 
-      { status: 401 }
-    );
-  }
+  // SECURITY: This route is permanently disabled to prevent code injection attacks
+  // The import functionality has been removed to eliminate potential security risks
+  return NextResponse.json(
+    { error: "Import route permanently disabled for security reasons" }, 
+    { status: 403 }
+  );
+}
 
-  // Only allow in development or with explicit enable flag
-  if (process.env.NODE_ENV === "production" && 
-      process.env.ENABLE_IMPORT_ROUTE !== "true") {
-    return NextResponse.json(
-      { error: "Import route disabled in production" }, 
-      { status: 403 }
-    );
-  }
+export async function POST(req: NextRequest) {
+  // SECURITY: This route is permanently disabled to prevent code injection attacks
+  return NextResponse.json(
+    { error: "Import route permanently disabled for security reasons" }, 
+    { status: 403 }
+  );
+}
 
   try {
     const client = new Client({ 

@@ -1,0 +1,13 @@
+"use client";
+import { useEffect, useState } from "react";
+import Sidebar from "@/components/admin/Sidebar";
+import Header from "@/components/admin/Header";
+type Insights = { metrics: { customers: number; orders: number; products: number; revenue: string }; lowStock: { id: string; name: string; stock: number }[]; topProducts: { name: string; sold: number }[] };
+export default function AdminAnalyticsPage() {
+  const [data, setData] = useState<Insights | null>(null);
+  useEffect(() => { fetch("/api/admin/insights").then((r) => r.json()).then(setData).catch(() => {}); }, []);
+  const metrics = data?.metrics;
+  return <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900"><Sidebar /><div className="ml-64 flex-1"><Header /><main className="p-6"><h1 className="text-2xl font-bold text-gray-900 dark:text-white">Analytics</h1><p className="mb-6 text-sm text-gray-500">Revenue, orders, customers, and product performance.</p>{!metrics ? <p className="text-gray-500">Loading analytics…</p> : <><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><Card label="Delivered revenue" value={`₹${Number(metrics.revenue).toLocaleString("en-IN")}`}/><Card label="Orders" value={metrics.orders.toString()}/><Card label="Customers" value={metrics.customers.toString()}/><Card label="Catalog products" value={metrics.products.toString()}/></div><div className="mt-6 grid gap-6 lg:grid-cols-2"><List title="Top-selling products" empty="No completed order items yet." rows={data?.topProducts.map((item) => [item.name, `${item.sold} sold`]) || []}/><List title="Low-stock products" empty="No products in the catalog." rows={data?.lowStock.map((item) => [item.name, `${item.stock} left`]) || []}/></div></>}</main></div></div>;
+}
+function Card({ label, value }: { label: string; value: string }) { return <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800"><p className="text-sm text-gray-500">{label}</p><p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">{value}</p></div>; }
+function List({ title, empty, rows }: { title: string; empty: string; rows: string[][] }) { return <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800"><h2 className="font-semibold text-gray-900 dark:text-white">{title}</h2>{rows.length ? <ul className="mt-3 divide-y divide-gray-100 dark:divide-gray-700">{rows.map(([name, value]) => <li key={name} className="flex justify-between py-3 text-sm"><span className="text-gray-700 dark:text-gray-200">{name}</span><span className="font-semibold text-gray-900 dark:text-white">{value}</span></li>)}</ul> : <p className="mt-3 text-sm text-gray-500">{empty}</p>}</section>; }

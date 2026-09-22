@@ -1,10 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCart } from "@/components/CartContext";
-import { toast } from "sonner";
 import { Search, X } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
 
@@ -18,18 +15,34 @@ interface Product {
   stock: number;
 }
 
+type ShopCategory = { name: string; productCount: number };
+
 function isProductImage(image: string) {
   return image.startsWith("/") || image.startsWith("http") || image.startsWith("data:image/");
 }
 
 function ShopContent() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<ShopCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState<string>("");
   const searchParams = useSearchParams();
   const router = useRouter();
   const search = searchParams.get("search")?.trim() ?? "";
-  const { addItem } = useCart();
+  useEffect(() => {
+    async function fetchCategories() {
+      try {
+        const [categoryResponse, productResponse] = await Promise.all([fetch("/api/categories"), fetch("/api/products")]);
+        const storedCategories = categoryResponse.ok ? await categoryResponse.json() : [];
+        const catalog = productResponse.ok ? await productResponse.json() : [];
+        const categoriesWithCounts = Array.isArray(storedCategories) && storedCategories.length
+          ? storedCategories.map((item: ShopCategory) => ({ name: item.name, productCount: Number(item.productCount) || 0 }))
+          : Array.from(new Set(Array.isArray(catalog) ? catalog.map((item: Product) => item.category).filter(Boolean) : [])).map((name) => ({ name, productCount: catalog.filter((item: Product) => item.category === name).length }));
+        setCategories(categoriesWithCounts);
+      } catch { setCategories([]); }
+    }
+    void fetchCategories();
+  }, []);
 
   useEffect(() => {
     async function fetchProducts() {
@@ -51,7 +64,7 @@ function ShopContent() {
     void fetchProducts();
   }, [category, search]);
 
-  const categories = ["All", "Tiles & Sanitaryware"]; // Simplified for demo
+  const categoryFilters: ShopCategory[] = [{ name: "All", productCount: products.length }, ...categories];
 
   function submitSearch(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -90,17 +103,21 @@ function ShopContent() {
 
         {/* Category filter */}
         <div className="flex flex-wrap gap-2">
-          {categories.map((cat) => (
+          {categoryFilters.map((cat) => (
             <button
-              key={cat}
-              onClick={() => setCategory(cat === "All" ? "" : cat)}
+              key={cat.name}
+              onClick={() => setCategory(cat.name === "All" ? "" : cat.name)}
+              disabled={cat.name !== "All" && cat.productCount === 0}
+              title={cat.productCount === 0 ? "Add products to this category in Admin Products first." : undefined}
               className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-                (cat === "All" && !category) || category === cat
-                  ? "bg-primary text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                (cat.name === "All" && !category) || category === cat.name
+                  ? "bg-[#4f46e5] text-white shadow-sm"
+                  : cat.productCount === 0
+                    ? "cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
               }`}
             >
-              {cat}
+              {cat.name}{cat.name !== "All" && <span className="ml-1.5 text-xs opacity-70">{cat.productCount}</span>}
             </button>
           ))}
         </div>
@@ -126,9 +143,7 @@ function ShopContent() {
       ) : (
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {products.map((product) => (
-            <Link key={product.id} href={`/product/${product.id}`} className="block hover:shadow-lg transition-shadow duration-300">
-              <ProductCard key={product.id} product={product} />
-            </Link>
+            <ProductCard key={product.id} product={product} />
           ))}
         </div>
       )}
