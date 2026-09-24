@@ -5,11 +5,16 @@ import { getSessionUser } from "@/lib/auth";
 import { eq } from "drizzle-orm";
 import { sendLowStockAlertEmail } from "@/lib/order-email";
 
-function isExternalImageUrl(value: unknown): value is string {
+function isValidProductImageUrl(value: unknown): value is string {
+  if (typeof value !== "string" || !value.trim()) return false;
+  const str = value.trim();
+  if (str.startsWith("/") || str.startsWith("data:image/")) return true;
   try {
-    const url = new URL(String(value));
-    return url.protocol === "https:";
-  } catch { return false; }
+    const url = new URL(str);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
 }
 
 export async function GET(
@@ -36,8 +41,8 @@ export async function PUT(
   const { id } = await params;
   try {
     const { name, description, price, image, category, stock } = await req.json();
-    if (image !== undefined && !isExternalImageUrl(image)) {
-      return NextResponse.json({ error: "Product images must use the image storage URL." }, { status: 400 });
+    if (image !== undefined && !isValidProductImageUrl(image)) {
+      return NextResponse.json({ error: "Please upload a valid product image." }, { status: 400 });
     }
     const updateData: Record<string, unknown> = {};
     if (name !== undefined) updateData.name = name;

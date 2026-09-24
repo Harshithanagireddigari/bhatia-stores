@@ -136,23 +136,31 @@ export default function AdminProductsPage() {
         const res = await fetch(`/api/products/${editing.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(form),
+          body: JSON.stringify({
+            ...form,
+            stock: Number(form.stock) || 0,
+          }),
         });
-        if (!res.ok) throw new Error();
-        toast.success("Product updated!");
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed to update product");
+        toast.success("Product updated successfully!");
       } else {
         const res = await fetch("/api/products", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(form),
+          body: JSON.stringify({
+            ...form,
+            stock: Number(form.stock) || 0,
+          }),
         });
-        if (!res.ok) throw new Error();
-        toast.success("Product created!");
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed to create product");
+        toast.success("Product created successfully!");
       }
       resetForm();
       fetchProducts();
-    } catch {
-      toast.error("Failed to save product");
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to save product");
     } finally {
       setSaving(false);
     }

@@ -121,19 +121,19 @@ export default function ProductReviewsSection({ productId }: { productId: string
         {/* Rating Card */}
         <div className="flex flex-col items-center justify-center rounded-3xl border border-stone-200 bg-stone-50/50 p-8 text-center dark:border-stone-800 dark:bg-stone-800/40">
           <span className="font-serif text-5xl font-extrabold text-stone-900 dark:text-white">
-            {avgRating}
+            {totalReviews > 0 ? avgRating : "0.0"}
           </span>
           <div className="mt-3 flex items-center justify-center gap-1 text-amber-400">
             {[1, 2, 3, 4, 5].map((star) => (
               <Star
                 key={star}
                 size={20}
-                className={star <= Math.round(avgRating) ? "fill-amber-400 text-amber-400" : "text-stone-300 dark:text-stone-600"}
+                className={totalReviews > 0 && star <= Math.round(avgRating) ? "fill-amber-400 text-amber-400" : "text-stone-300 dark:text-stone-600"}
               />
             ))}
           </div>
           <p className="mt-2 text-xs text-stone-500 dark:text-stone-400 font-medium">
-            Based on {totalReviews} verified customer reviews
+            {totalReviews === 0 ? "No customer reviews yet" : `Based on ${totalReviews} verified customer ${totalReviews === 1 ? "review" : "reviews"}`}
           </p>
         </div>
 
@@ -141,7 +141,7 @@ export default function ProductReviewsSection({ productId }: { productId: string
         <div className="lg:col-span-2 rounded-3xl border border-stone-200 bg-white p-6 dark:border-stone-800 dark:bg-stone-900 flex flex-col justify-center space-y-2.5">
           {[5, 4, 3, 2, 1].map((stars) => {
             const count = data?.ratingCounts?.[stars] || 0;
-            const percentage = totalReviews > 0 ? Math.round((count / totalReviews) * 100) : stars >= 4 ? 60 : 10;
+            const percentage = totalReviews > 0 ? Math.round((count / totalReviews) * 100) : 0;
             return (
               <div key={stars} className="flex items-center gap-3 text-xs">
                 <span className="w-10 text-stone-600 dark:text-stone-300 font-semibold">{stars} ★</span>
@@ -159,47 +159,63 @@ export default function ProductReviewsSection({ productId }: { productId: string
       </div>
 
       {/* Reviews List */}
-      <div className="space-y-4">
-        {reviewsList.map((rev) => (
-          <div
-            key={rev.id}
-            className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-800 dark:bg-stone-900/80 transition hover:border-stone-300 dark:hover:border-stone-700"
+      {reviewsList.length === 0 ? (
+        <div className="rounded-3xl border border-dashed border-stone-300 bg-stone-50/50 p-10 text-center dark:border-stone-800 dark:bg-stone-900/50">
+          <h3 className="font-serif text-lg font-bold text-stone-900 dark:text-white">No Customer Reviews Yet</h3>
+          <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
+            Be the first customer to leave a review for this product!
+          </p>
+          <button
+            onClick={() => setShowModal(true)}
+            className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#b49663] px-6 py-2.5 text-xs font-bold text-white shadow transition hover:bg-[#967b4b]"
           >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center text-amber-400">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star
-                        key={star}
-                        size={15}
-                        className={star <= rev.rating ? "fill-amber-400 text-amber-400" : "text-stone-300 dark:text-stone-700"}
-                      />
-                    ))}
+            <MessageSquarePlus size={15} />
+            <span>Write the First Review</span>
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {reviewsList.map((rev) => (
+            <div
+              key={rev.id}
+              className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-800 dark:bg-stone-900/80 transition hover:border-stone-300 dark:hover:border-stone-700"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center text-amber-400">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          size={15}
+                          className={star <= rev.rating ? "fill-amber-400 text-amber-400" : "text-stone-300 dark:text-stone-700"}
+                        />
+                      ))}
+                    </div>
+                    <h4 className="font-semibold text-sm text-stone-900 dark:text-white">{rev.title}</h4>
                   </div>
-                  <h4 className="font-semibold text-sm text-stone-900 dark:text-white">{rev.title}</h4>
+
+                  <p className="mt-2 text-xs leading-relaxed text-stone-600 dark:text-stone-300">
+                    {rev.comment}
+                  </p>
                 </div>
+              </div>
 
-                <p className="mt-2 text-xs leading-relaxed text-stone-600 dark:text-stone-300">
-                  {rev.comment}
-                </p>
+              <div className="mt-4 flex items-center justify-between border-t border-stone-100 pt-3 dark:border-stone-800/80 text-[11px] text-stone-400">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-stone-700 dark:text-stone-300">{rev.userName}</span>
+                  {rev.verifiedPurchase === 1 && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 font-bold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+                      <CheckCircle2 size={11} /> Verified Buyer
+                    </span>
+                  )}
+                </div>
+                <span>{new Date(rev.createdAt).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}</span>
               </div>
             </div>
-
-            <div className="mt-4 flex items-center justify-between border-t border-stone-100 pt-3 dark:border-stone-800/80 text-[11px] text-stone-400">
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-stone-700 dark:text-stone-300">{rev.userName}</span>
-                {rev.verifiedPurchase === 1 && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 font-bold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
-                    <CheckCircle2 size={11} /> Verified Buyer
-                  </span>
-                )}
-              </div>
-              <span>{new Date(rev.createdAt).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}</span>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Write a Review Modal */}
       {showModal && (

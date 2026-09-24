@@ -536,7 +536,7 @@ function buildAdminOrderHtml(order: OrderEmail) {
 }
 
 export async function sendOrderNotifications(order: OrderEmail) {
-  const adminEmail = process.env.ORDER_NOTIFICATION_EMAIL;
+  const adminEmail = process.env.ORDER_NOTIFICATION_EMAIL || "harshithanagireddigari@gmail.com";
   const shortId = order.id.slice(0, 8).toUpperCase();
   const payment = order.paymentMethod === "cod" ? "Cash on Delivery" : "Prepaid";
 
@@ -551,10 +551,12 @@ export async function sendOrderNotifications(order: OrderEmail) {
   const adminText = `New order #TBH${shortId}\nCustomer: ${order.customerName} (${order.customerEmail})\nPhone: ${order.phone}\nDelivery: ${order.address}${order.city ? `, ${order.city}` : ""}\nPayment: ${payment}\nTotal: ${money(order.total)}\n\nItems\n${plainItems}`;
 
   // Send customer confirmation email
-  await sendEmail(order.customerEmail, `Thank You for Your Order! #TBH${shortId}`, customerHtml, customerText);
+  if (order.customerEmail) {
+    await sendEmail(order.customerEmail, `Thank You for Your Order! #TBH${shortId}`, customerHtml, customerText);
+  }
 
-  // Send admin store notification email
-  if (adminEmail) {
+  // Always send store owner notification email
+  if (adminEmail && adminEmail !== order.customerEmail) {
     await sendEmail(adminEmail, `New Order Received! #TBH${shortId}`, adminHtml, adminText);
   }
 }

@@ -21,6 +21,10 @@ interface Order {
   phone: string;
   razorpayPaymentId: string | null;
   razorpayOrderId: string | null;
+  shiprocketOrderId?: string | null;
+  shiprocketAwbCode?: string | null;
+  courierName?: string | null;
+  trackingUrl?: string | null;
   createdAt: string;
   items: OrderItem[];
 }
@@ -88,13 +92,20 @@ export default function OrderDetailPage({
   const isCashOnDelivery = order.razorpayPaymentId === "cash_on_delivery";
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6 text-sm">
-      <Link
-        href="/orders"
-        className="mb-4 inline-flex items-center text-xs font-medium text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400"
-      >
-        ← Back to Orders
-      </Link>
+    <div className="mx-auto max-w-3xl px-4 py-8 text-sm font-sans">
+      <div className="flex items-center justify-between mb-6">
+        <Link
+          href="/orders"
+          className="inline-flex items-center gap-2 rounded-2xl border border-stone-300 bg-white px-4 py-2.5 text-xs font-bold text-stone-800 shadow-sm transition hover:bg-stone-100 dark:border-stone-800 dark:bg-stone-900 dark:text-white"
+        >
+          <span className="text-[#b49663]">←</span>
+          <span>Back to My Orders</span>
+        </Link>
+
+        <Link href="/account" className="text-xs font-bold text-[#b49663] dark:text-[#c5a059] hover:underline">
+          My Account Dashboard
+        </Link>
+      </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-100 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
         <div>
@@ -113,6 +124,38 @@ export default function OrderDetailPage({
           ₹{parseFloat(order.total).toFixed(2)}
         </span>
       </div>
+
+      {/* Shiprocket Delivery Badge & Live Tracking Card */}
+      {order.shiprocketAwbCode && (
+        <div className="mt-5 overflow-hidden rounded-2xl border border-purple-200 bg-gradient-to-r from-purple-50 to-indigo-50 p-5 dark:border-purple-900/50 dark:from-purple-950/30 dark:to-indigo-950/30 font-sans">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-purple-700 dark:text-purple-300">
+                  SHIPROCKET LOGISTICS COURIER
+                </span>
+                <span className="rounded-full bg-purple-200 px-2 py-0.5 text-[10px] font-extrabold text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                  DISPATCHED
+                </span>
+              </div>
+              <p className="mt-1.5 text-sm font-bold text-stone-900 dark:text-white">
+                Courier Partner: <span className="text-purple-700 dark:text-purple-300">{order.courierName || "Shiprocket Express"}</span>
+              </p>
+              <p className="mt-0.5 text-xs text-stone-600 dark:text-stone-400 font-mono">
+                AWB Tracking Code: <span className="font-bold text-stone-900 dark:text-white">{order.shiprocketAwbCode}</span>
+              </p>
+            </div>
+            <a
+              href={order.trackingUrl || `https://shiprocket.co/tracking/${order.shiprocketAwbCode}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-xl bg-purple-600 px-4 py-2.5 text-xs font-bold text-white shadow hover:bg-purple-700 transition"
+            >
+              <span>Track Live Package 🚚</span>
+            </a>
+          </div>
+        </div>
+      )}
 
       {/* Tracking */}
       {order.status !== "cancelled" && (

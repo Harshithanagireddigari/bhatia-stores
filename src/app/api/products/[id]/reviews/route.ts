@@ -5,37 +5,6 @@ import { getSessionUser } from "@/lib/auth";
 import { eq, desc } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 
-// Sample luxury reviews fallback for catalog products
-const SAMPLE_REVIEWS = [
-  {
-    id: "sample-1",
-    userName: "Vikram Malhotra",
-    rating: 5,
-    title: "Exquisite finish & premium quality!",
-    comment: "Installed these tiles in our master bathroom renovation. The texture and mirror polish under warm ambient light look incredible. Highly recommended!",
-    verifiedPurchase: 1,
-    createdAt: new Date(Date.now() - 5 * 86400000).toISOString(),
-  },
-  {
-    id: "sample-2",
-    userName: "Ananya Sharma",
-    rating: 5,
-    title: "Top-tier craftsmanship from Bhatia Stores",
-    comment: "Delivered promptly without any chipped edges. The Artize-inspired aesthetic matches our modern architectural theme perfectly.",
-    verifiedPurchase: 1,
-    createdAt: new Date(Date.now() - 12 * 86400000).toISOString(),
-  },
-  {
-    id: "sample-3",
-    userName: "Rajesh K.",
-    rating: 4,
-    title: "Sturdy & easy to clean surface",
-    comment: "Very pleased with the stain resistance and durability. Packaging was extremely secure. Will order again for the living room floor.",
-    verifiedPurchase: 1,
-    createdAt: new Date(Date.now() - 20 * 86400000).toISOString(),
-  },
-];
-
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -49,20 +18,18 @@ export async function GET(
       .where(eq(reviews.productId, productId))
       .orderBy(desc(reviews.createdAt));
 
-    const allReviews = dbReviews.length > 0 ? dbReviews : SAMPLE_REVIEWS;
-
-    const totalReviews = allReviews.length;
-    const totalRatingSum = allReviews.reduce((sum, r) => sum + Number(r.rating), 0);
-    const averageRating = totalReviews > 0 ? Number((totalRatingSum / totalReviews).toFixed(1)) : 5.0;
+    const totalReviews = dbReviews.length;
+    const totalRatingSum = dbReviews.reduce((sum, r) => sum + Number(r.rating), 0);
+    const averageRating = totalReviews > 0 ? Number((totalRatingSum / totalReviews).toFixed(1)) : 0;
 
     const ratingCounts = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
-    allReviews.forEach((r) => {
+    dbReviews.forEach((r) => {
       const star = Math.min(5, Math.max(1, Number(r.rating))) as 1 | 2 | 3 | 4 | 5;
       ratingCounts[star] = (ratingCounts[star] || 0) + 1;
     });
 
     return NextResponse.json({
-      reviews: allReviews,
+      reviews: dbReviews,
       totalReviews,
       averageRating,
       ratingCounts,
@@ -70,10 +37,10 @@ export async function GET(
   } catch (error) {
     console.error("Fetch reviews error:", error);
     return NextResponse.json({
-      reviews: SAMPLE_REVIEWS,
-      totalReviews: SAMPLE_REVIEWS.length,
-      averageRating: 4.8,
-      ratingCounts: { 5: 2, 4: 1, 3: 0, 2: 0, 1: 0 },
+      reviews: [],
+      totalReviews: 0,
+      averageRating: 0,
+      ratingCounts: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
     });
   }
 }

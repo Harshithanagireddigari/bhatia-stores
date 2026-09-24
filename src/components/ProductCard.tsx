@@ -4,13 +4,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { ShoppingCart, Heart } from "lucide-react";
 import { useCart } from "./CartContext";
-import { useWishlist } from "./WishlistContext"; // Assuming a hook exists for wishlist actions
+import { useWishlist } from "./WishlistContext";
 
 export type Product = {
   id: string;
   name: string;
-  price: string; // formatted price string, e.g. "₹199"
-  image: string; // URL or relative path
+  price: string;
+  image: string;
   stock?: number;
 };
 
@@ -33,25 +33,47 @@ export default function ProductCard({ product }: Props) {
   };
 
   return (
-    <div className="group flex flex-col rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] hover:-translate-y-1 hover:shadow-xl dark:border-gray-700 dark:bg-gray-800">
+    <div className="group flex flex-col rounded-2xl border border-stone-200 bg-white p-4 shadow-sm transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] hover:-translate-y-1 hover:shadow-xl dark:border-stone-800 dark:bg-stone-900 font-sans">
       <Link href={`/product/${product.id}`} className="block">
-        <div className="relative aspect-square overflow-hidden rounded-lg bg-gray-50 dark:bg-gray-900">
-          <Image src={product.image} alt={product.name} fill className="object-cover transition-transform duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1)] group-hover:scale-105" />
+        <div className="relative aspect-square overflow-hidden rounded-xl bg-stone-50 dark:bg-stone-950">
+          <Image
+            src={product.image}
+            alt={product.name}
+            fill
+            className="object-cover transition-transform duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1)] group-hover:scale-105"
+          />
         </div>
-        <h3 className="mt-3 text-base font-medium text-gray-900 dark:text-white line-clamp-2 transition-colors duration-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">{product.name}</h3>
-        <p className="mt-1 text-sm font-semibold text-[#4f46e5] dark:text-indigo-300">₹{Number(product.price).toLocaleString("en-IN")}</p>
+        <h3 className="mt-3 text-sm font-bold text-stone-900 dark:text-white line-clamp-2 transition-colors duration-300 group-hover:text-[#b49663] dark:group-hover:text-[#c5a059]">
+          {product.name}
+        </h3>
+        <p className="mt-1 text-sm font-bold text-[#b49663] dark:text-[#c5a059]">
+          ₹{Number(product.price).toLocaleString("en-IN")}
+        </p>
       </Link>
       <div className="mt-3 flex items-center justify-between">
         <button
           onClick={handleAddToCart}
-          className="flex items-center gap-1 rounded-full bg-[#4f46e5] px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-[#4338ca] focus:outline-none focus:ring-2 focus:ring-[#4f46e5] focus:ring-offset-2"
+          className="flex items-center gap-1.5 rounded-full bg-[#b49663] px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#967b4b] focus:outline-none"
         >
-          <ShoppingCart size={14} /> Add to Cart
+          <ShoppingCart size={13} />
+          <span>Add to Cart</span>
         </button>
         <button
-          onClick={() => toggleItem({ productId: product.id, name: product.name, price: parseFloat(product.price.replace(/[^0-9.]/g, "")), image: product.image, quantity: 1 })}
+          onClick={() =>
+            toggleItem({
+              productId: product.id,
+              name: product.name,
+              price: parseFloat(product.price.replace(/[^0-9.]/g, "")),
+              image: product.image,
+              quantity: 1,
+            })
+          }
           aria-label={hasItem(product.id) ? "Remove from wishlist" : "Add to wishlist"}
-          className="rounded-full p-1 text-gray-600 hover:text-[#4f46e5] dark:text-gray-300 dark:hover:text-indigo-300"
+          className={`rounded-full p-1.5 transition ${
+            hasItem(product.id)
+              ? "text-red-500 dark:text-red-400"
+              : "text-stone-400 hover:text-[#b49663] dark:text-stone-500 dark:hover:text-[#c5a059]"
+          }`}
         >
           <Heart size={16} fill={hasItem(product.id) ? "currentColor" : "none"} />
         </button>

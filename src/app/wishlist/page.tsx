@@ -2,50 +2,102 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, ShoppingBag, Trash2 } from "lucide-react";
 import { useCart } from "@/components/CartContext";
 import { useWishlist } from "@/components/WishlistContext";
 
 export default function WishlistPage() {
+  const router = useRouter();
   const { items, removeItem } = useWishlist();
   const { addItem } = useCart();
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-14">
-      <div className="text-center">
-        <p className="text-sm font-semibold uppercase tracking-widest text-indigo-600">Your favourites</p>
-        <h1 className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">Wishlist</h1>
-        <p className="mx-auto mt-3 max-w-md text-gray-500 dark:text-gray-400">Save the tiles and sanitaryware designs you want to compare or discuss with our team.</p>
-      </div>
+    <div className="min-h-screen bg-[#f8f6f1] dark:bg-[#12100e] py-10 px-4 sm:px-6 lg:px-8 font-sans text-stone-800 dark:text-stone-200">
+      <div className="mx-auto max-w-6xl">
+        
+        {/* Navigation Back Bar */}
+        <div className="flex items-center justify-between mb-6">
+          <button
+            onClick={() => router.back()}
+            className="inline-flex items-center gap-2 rounded-2xl border border-stone-300 bg-white px-4 py-2.5 text-xs font-bold text-stone-800 shadow-sm transition hover:bg-stone-100 dark:border-stone-800 dark:bg-stone-900 dark:text-white"
+          >
+            <ArrowLeft size={16} className="text-[#b49663]" />
+            <span>← Go Back</span>
+          </button>
 
-      {items.length === 0 ? (
-        <div className="py-14 text-center">
-          <p className="text-gray-500 dark:text-gray-400">Your wishlist is empty.</p>
-          <Link href="/shop" className="mt-7 inline-block rounded-full bg-indigo-600 px-6 py-3 font-semibold text-white hover:bg-indigo-700">Browse products</Link>
+          <Link href="/shop" className="text-xs font-bold text-[#b49663] dark:text-[#c5a059] hover:underline">
+            Explore All Products
+          </Link>
         </div>
-      ) : (
-        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((item) => (
-            <article key={item.productId} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-              <Link href={`/product/${item.productId}`} className="block">
-                <div className="relative h-36 overflow-hidden rounded-xl bg-gray-50 dark:bg-gray-900">
-                  <Image
-                    src={item.image || "/placeholder.png"}
-                    alt={item.name}
-                    fill
-                    className="object-cover"
-                  />
+
+        {/* Header Hero Card */}
+        <div className="rounded-[28px] border border-[#e2d5c3] bg-white p-8 sm:p-10 text-center shadow-lg dark:border-[#382f25] dark:bg-[#1a1613] mb-8">
+          <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#b49663] dark:text-[#c5a059]">
+            YOUR FAVORITES
+          </p>
+          <h1 className="mt-2 font-serif text-3xl sm:text-4xl font-bold text-stone-900 dark:text-white">
+            Saved Wishlist ({items.length})
+          </h1>
+          <p className="mx-auto mt-2 max-w-md text-xs text-stone-600 dark:text-stone-300">
+            Save tiles, sanitaryware, and luxury hardware designs you want to compare or discuss.
+          </p>
+        </div>
+
+        {items.length === 0 ? (
+          <div className="rounded-3xl border border-stone-200 bg-white p-12 text-center dark:border-stone-800 dark:bg-stone-900">
+            <p className="text-sm text-stone-500 dark:text-stone-400">Your wishlist is currently empty.</p>
+            <Link
+              href="/shop"
+              className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[#c5a059] px-6 py-3 text-xs font-bold text-stone-900 shadow hover:bg-[#b49663]"
+            >
+              <ShoppingBag size={16} />
+              <span>Browse Luxury Catalog</span>
+            </Link>
+          </div>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {items.map((item) => (
+              <article
+                key={item.productId}
+                className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm transition hover:shadow-md dark:border-stone-800 dark:bg-stone-900"
+              >
+                <Link href={`/product/${item.productId}`} className="block">
+                  <div className="relative h-44 overflow-hidden rounded-2xl bg-stone-50 dark:bg-stone-950">
+                    <Image
+                      src={item.image || "/placeholder.png"}
+                      alt={item.name}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <h2 className="mt-4 font-bold text-stone-900 dark:text-white line-clamp-2 text-sm">
+                    {item.name}
+                  </h2>
+                  <p className="mt-1 font-bold text-[#b49663] dark:text-[#c5a059] text-sm">
+                    ₹{Number(item.price).toLocaleString("en-IN")}
+                  </p>
+                </Link>
+                <div className="mt-5 flex items-center gap-3 text-xs">
+                  <button
+                    onClick={() => addItem({ ...item, quantity: 1 })}
+                    className="flex-1 rounded-2xl bg-[#c5a059] py-2.5 font-bold text-stone-900 shadow hover:bg-[#b49663] transition"
+                  >
+                    Add to Cart
+                  </button>
+                  <button
+                    onClick={() => removeItem(item.productId)}
+                    className="rounded-2xl border border-stone-300 p-2.5 text-stone-600 hover:text-red-600 dark:border-stone-700 dark:text-stone-400 dark:hover:text-red-400 transition"
+                    title="Remove item"
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 </div>
-                <h2 className="mt-4 font-semibold text-gray-900 dark:text-white">{item.name}</h2>
-                <p className="mt-1 font-bold text-indigo-600">₹{item.price.toFixed(2)}</p>
-              </Link>
-              <div className="mt-5 flex gap-3">
-                <button onClick={() => addItem({ ...item, quantity: 1 })} className="flex-1 rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">Add to cart</button>
-                <button onClick={() => removeItem(item.productId)} className="rounded-full border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700">Remove</button>
-              </div>
-            </article>
-          ))}
-        </div>
-      )}
+              </article>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

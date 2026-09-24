@@ -1,42 +1,105 @@
-import { db } from "@/db";
-import { sql } from "drizzle-orm";
+import { NextResponse } from "next/server";
 
-function clientAddress(request: Request) {
-  if (process.env.TRUST_PROXY === "true") {
-    return (
-      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-      request.headers.get("x-real-ip") ||
-      "unknown"
-    );
-  }
-  return "shared";
+interface RateLimitStore {
+  count: number;
+  resetTime: number;
 }
 
+const memoryStore = new Map<string, RateLimitStore>();
+
+// Clean up expired IP records periodically
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, data] of memoryStore.entries()) {
+    if (now > data.resetTime) {
+      memoryStore.delete(key);
+    }
+  }
+}, 5 * 60 * 1000);
+
 export async function isRateLimited(
-  request: Request,
-  scope: string,
-  limit = 10,
-  windowMs = 60_000
-) {
-  const key = `${scope}:${clientAddress(request)}`;
-  const resetAt = new Date(Date.now() + windowMs);
+  req: Request,
+  actionKey: string,
+  maxAttempts: number = 30,
+  windowMs: number = 60 * 1000
+): Promise<boolean> {
+  const forwarded = req.headers.get("x-forwarded-for");
+  const ip = forwarded ? forwarded.split(",")[0].trim() : req.headers.get("x-real-ip") || "127.0.0.1";
+  const now = Date.now();
+  const storeKey = `${ip}:${actionKey}`;
+  const record = memoryStore.get(storeKey);
 
-  const result = await db.execute(sql`
-    INSERT INTO rate_limits (key, count, reset_at)
-    VALUES (${key}, 1, ${resetAt})
-    ON CONFLICT (key)
-    DO UPDATE SET
-      count = CASE
-        WHEN rate_limits.reset_at <= NOW() THEN 1
-        ELSE rate_limits.count + 1
-      END,
-      reset_at = CASE
-        WHEN rate_limits.reset_at <= NOW() THEN ${resetAt}
-        ELSE rate_limits.reset_at
-      END
-    RETURNING count;
-  `);
+  if (!record || now > record.resetTime) {
+    memoryStore.set(storeKey, {
+      count: 1,
+      resetTime: now + windowMs,
+    });
+    return false;
+  }
 
-  const row = result.rows[0] as { count: number } | undefined;
-  return !row || Number(row.count) > limit;
+  if (record.count >= maxAttempts) {
+    return true;
+  }
+
+  record.count += 1;
+  return false;
+}
+
+export function rateLimit(
+  req: Request,
+  limit: number = 60,
+  windowMs: number = 60 * 1000
+): { success: boolean; limit: number; remaining: number; reset: number } {
+  const forwarded = req.headers.get("x-forwarded-for");
+  const ip = forwarded ? forwarded.split(",")[0].trim() : req.headers.get("x-real-ip") || "127.0.0.1";
+
+  const now = Date.now();
+  const key = `${ip}:${new URL(req.url).pathname}`;
+  const record = memoryStore.get(key);
+
+  if (!record || now > record.resetTime) {
+    memoryStore.set(key, {
+      count: 1,
+      resetTime: now + windowMs,
+    });
+    return { success: true, limit, remaining: limit - 1, reset: Math.ceil(windowMs / 1000) };
+  }
+
+  if (record.count >= limit) {
+    return {
+      success: false,
+      limit,
+      remaining: 0,
+      reset: Math.ceil((record.resetTime - now) / 1000),
+    };
+  }
+
+  record.count += 1;
+  return {
+    success: true,
+    limit,
+    remaining: limit - record.count,
+    reset: Math.ceil((record.resetTime - now) / 1000),
+  };
+}
+
+export function enforceRateLimit(req: Request, limit: number = 30, windowMs: number = 60 * 1000) {
+  const result = rateLimit(req, limit, windowMs);
+  if (!result.success) {
+    return NextResponse.json(
+      {
+        error: "Too many requests. Server protection active.",
+        retryAfterSeconds: result.reset,
+      },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(result.reset),
+          "X-RateLimit-Limit": String(result.limit),
+          "X-RateLimit-Remaining": String(result.remaining),
+        },
+      }
+    );
+  }
+  return null;
 }

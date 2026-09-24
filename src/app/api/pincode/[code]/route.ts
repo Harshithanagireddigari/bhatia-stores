@@ -14,7 +14,7 @@ export async function GET(
     );
   }
 
-  // 1. Try PostalPincode API with 3s timeout
+  // 1. Try PostalPincode API (India Post official registry) with 3s timeout
   try {
     const res = await fetch(`https://api.postalpincode.in/pincode/${pincode}`, {
       headers: { "User-Agent": "Mozilla/5.0" },
@@ -35,9 +35,9 @@ export async function GET(
           return NextResponse.json({
             pincode,
             city: primaryOffice.District || primaryOffice.Division || primaryOffice.Name,
-            district: primaryOffice.District,
-            state: primaryOffice.State,
-            postOffice: primaryOffice.Name,
+            district: primaryOffice.District || "",
+            state: primaryOffice.State || "",
+            postOffice: primaryOffice.Name || "",
             deliveryAvailable,
             officeCount: postOffices.length,
             postOffices: postOffices.map((po: { Name: string; DeliveryStatus: string }) => ({
@@ -52,7 +52,7 @@ export async function GET(
     console.warn("PostalPincode API failed/timed out, attempting Nominatim fallback...", error);
   }
 
-  // 2. Fallback to OpenStreetMap Nominatim API
+  // 2. Fallback to OpenStreetMap Nominatim API for India postal codes
   try {
     const res = await fetch(
       `https://nominatim.openstreetmap.org/search?postalcode=${pincode}&country=India&format=json&addressdetails=1`,
@@ -72,31 +72,31 @@ export async function GET(
         const state = addr.state || "";
         const city = addr.city || addr.town || addr.village || addr.county || district;
 
-        return NextResponse.json({
-          pincode,
-          city: city || "India",
-          district,
-          state,
-          postOffice: city || "Local Delivery Office",
-          deliveryAvailable: true,
-          officeCount: 1,
-          postOffices: [{ name: city || pincode, delivery: true }],
-        });
+        if (state || city || district) {
+          return NextResponse.json({
+            pincode,
+            city: city || district || "India",
+            district,
+            state,
+            postOffice: city || "Local Delivery Office",
+            deliveryAvailable: true,
+            officeCount: 1,
+            postOffices: [{ name: city || pincode, delivery: true }],
+          });
+        }
       }
     }
   } catch (error) {
-    console.warn("Nominatim fallback failed, using 6-digit Indian postal code default...", error);
+    console.warn("Nominatim fallback failed...", error);
   }
 
-  // 3. Fallback for valid 6-digit Indian postal code
-  return NextResponse.json({
-    pincode,
-    city: "India",
-    district: "",
-    state: "",
-    postOffice: `Pincode ${pincode}`,
-    deliveryAvailable: true,
-    officeCount: 1,
-    postOffices: [{ name: `Pincode ${pincode}`, delivery: true }],
-  });
+  // 3. If pincode is invalid / not found in India Post registry
+  return NextResponse.json(
+    {
+      error: `Pincode ${pincode} was not found in the Indian postal registry. Please check and enter a valid pincode.`,
+      pincode,
+      deliveryAvailable: false,
+    },
+    { status: 404 }
+  );
 }

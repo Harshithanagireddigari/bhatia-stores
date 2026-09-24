@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useCart } from "./CartContext";
 import { useTheme } from "next-themes";
-import { Moon, Search, Sun } from "lucide-react";
+import { Moon, Search, Sun, Heart, ShoppingBag, ShoppingCart, User, Package, LogOut } from "lucide-react";
 
 export default function Navbar() {
   const { itemCount } = useCart();
@@ -28,30 +29,41 @@ export default function Navbar() {
   }
 
   const linkClass =
-    "text-sm font-medium text-gray-700 dark:text-gray-200 transition-colors hover:text-indigo-600 dark:hover:text-indigo-400";
+    "text-sm font-semibold text-stone-700 dark:text-stone-200 transition-colors hover:text-[#b49663] dark:hover:text-[#c5a059]";
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-gray-200 bg-white/90 dark:border-gray-800 dark:bg-gray-900/90 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
+    <nav className="sticky top-0 z-50 border-b border-stone-200 bg-white/95 dark:border-stone-800 dark:bg-[#12100e]/95 backdrop-blur font-sans">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
+        
+        {/* LOGO (GOLD BRANDING WITH OFFICIAL LOGO IMAGE) */}
         <Link
           href="/"
-          className="text-xl font-bold tracking-tight text-indigo-600 dark:text-indigo-400"
+          className="font-serif text-xl sm:text-2xl font-bold tracking-tight text-[#b49663] dark:text-[#c5a059] transition hover:opacity-90 flex items-center gap-2.5"
         >
-          Bhatia Stores
+          <div className="relative h-9 w-9 overflow-hidden rounded-full border border-[#c5a059]/40 shadow-sm shrink-0">
+            <Image
+              src="/logo.png"
+              alt="Bhatia Stores Logo"
+              fill
+              className="object-cover"
+            />
+          </div>
+          <span>Bhatia Stores</span>
         </Link>
 
+        {/* DESKTOP NAVBAR LINKS */}
         <div className="hidden items-center gap-6 md:flex">
           <form onSubmit={submitSearch} className="relative">
             <Search
               aria-hidden
               size={16}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stone-400"
             />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search tiles..."
-              className="w-48 rounded-full border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm outline-none transition focus:border-indigo-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              placeholder="Search tiles, sanitaryware..."
+              className="w-52 rounded-full border border-stone-200 bg-stone-50 py-2 pl-9 pr-3 text-xs outline-none transition focus:border-[#b49663] dark:border-stone-800 dark:bg-stone-900 dark:text-white dark:focus:border-[#c5a059]"
             />
           </form>
 
@@ -62,27 +74,26 @@ export default function Navbar() {
           <Link
             href="/wishlist"
             aria-label="Wishlist"
-            className="relative rounded-full p-2 text-gray-600 dark:text-gray-300 transition hover:text-indigo-600 dark:hover:text-indigo-400"
+            className="relative flex items-center gap-1.5 text-xs font-semibold text-stone-700 dark:text-stone-200 transition hover:text-[#b49663] dark:hover:text-[#c5a059]"
           >
-            ♡
-            {itemCount > 0 && (
-              <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white">
-                {itemCount}
-              </span>
-            )}
+            <Heart size={18} className="text-[#b49663]" />
+            <span>Wishlist</span>
           </Link>
 
           <Link
             href="/cart"
             aria-label="Cart"
-            className="relative rounded-full p-2 text-gray-600 dark:text-gray-300 transition hover:text-indigo-600 dark:hover:text-indigo-400"
+            className="relative flex items-center gap-1.5 text-xs font-semibold text-stone-700 dark:text-stone-200 transition hover:text-[#b49663] dark:hover:text-[#c5a059]"
           >
-            🛒
-            {itemCount > 0 && (
-              <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white">
-                {itemCount}
-              </span>
-            )}
+            <div className="relative">
+              <ShoppingCart size={18} className="text-[#b49663]" />
+              {itemCount > 0 && (
+                <span className="absolute -right-2.5 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-[#b49663] text-[10px] font-bold text-white shadow-sm">
+                  {itemCount}
+                </span>
+              )}
+            </div>
+            <span>Cart</span>
           </Link>
 
           <Link href="/orders" className={linkClass}>
@@ -97,7 +108,7 @@ export default function Navbar() {
           {mounted && (
             <button
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="rounded-full p-2 text-gray-600 dark:text-gray-300 transition hover:bg-gray-100 dark:hover:bg-gray-800"
+              className="rounded-full p-2 text-stone-600 dark:text-stone-300 transition hover:bg-stone-100 dark:hover:bg-stone-800"
               aria-label="Toggle Theme"
               title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
             >
@@ -111,18 +122,18 @@ export default function Navbar() {
               router.push("/login");
               router.refresh();
             }}
-            className={linkClass}
+            className="text-xs font-semibold text-red-600 hover:text-red-700 dark:text-red-400 transition"
           >
             Logout
           </button>
         </div>
 
-        {/* Mobile Navbar controls */}
+        {/* MOBILE CONTROLS */}
         <div className="flex items-center gap-2 md:hidden">
           {mounted && (
             <button
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="rounded-full p-2 text-gray-600 dark:text-gray-300"
+              className="rounded-full p-2 text-stone-600 dark:text-stone-300"
               aria-label="Toggle Theme"
             >
               {theme === "dark" ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} />}
@@ -131,7 +142,7 @@ export default function Navbar() {
 
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="rounded p-1 text-gray-600 dark:text-gray-300"
+            className="rounded-xl p-2 text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800"
             aria-label="Menu"
           >
             <svg
@@ -151,72 +162,87 @@ export default function Navbar() {
         </div>
       </div>
 
+      {/* MOBILE DRAWER NAV */}
       {mobileOpen && (
-        <div className="border-t border-gray-200 dark:border-gray-800 px-4 pb-4 md:hidden">
-          <div className="flex flex-col gap-3 pt-3">
-            <form onSubmit={submitSearch} className="relative">
+        <div className="border-t border-stone-200 dark:border-stone-800 bg-white px-4 pb-5 pt-3 md:hidden dark:bg-[#161310]">
+          <div className="flex flex-col gap-3">
+            <form onSubmit={submitSearch} className="relative mb-2">
               <Search
                 aria-hidden
                 size={16}
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stone-400"
               />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search tiles..."
-                className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-9 pr-3 text-sm outline-none focus:border-indigo-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                placeholder="Search tiles, sanitaryware..."
+                className="w-full rounded-xl border border-stone-200 bg-stone-50 py-2.5 pl-9 pr-3 text-xs outline-none focus:border-[#b49663] dark:border-stone-700 dark:bg-stone-900 dark:text-white"
               />
             </form>
 
             <Link
               href="/shop"
-              className={linkClass}
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-bold text-stone-800 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800"
               onClick={() => setMobileOpen(false)}
             >
-              Shop
+              <ShoppingBag size={17} className="text-[#b49663]" />
+              <span>Shop Catalog</span>
             </Link>
 
             <Link
               href="/wishlist"
-              className={linkClass}
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-bold text-stone-800 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800"
               onClick={() => setMobileOpen(false)}
             >
-              ♡ Wishlist
+              <Heart size={17} className="text-[#b49663]" />
+              <span>Wishlist</span>
             </Link>
 
             <Link
               href="/cart"
-              className={linkClass}
+              className="flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-bold text-stone-800 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800"
               onClick={() => setMobileOpen(false)}
             >
-              🛒 Cart ({itemCount})
+              <div className="flex items-center gap-3">
+                <ShoppingCart size={17} className="text-[#b49663]" />
+                <span>My Shopping Cart</span>
+              </div>
+              {itemCount > 0 && (
+                <span className="rounded-full bg-[#b49663] px-2 py-0.5 text-[10px] text-white">
+                  {itemCount}
+                </span>
+              )}
             </Link>
 
             <Link
               href="/orders"
-              className={linkClass}
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-bold text-stone-800 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800"
               onClick={() => setMobileOpen(false)}
             >
-              My Orders
+              <Package size={17} className="text-[#b49663]" />
+              <span>My Orders</span>
             </Link>
 
             <Link
               href="/account"
-              className={linkClass}
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-bold text-stone-800 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800"
               onClick={() => setMobileOpen(false)}
             >
-              Account
+              <User size={17} className="text-[#b49663]" />
+              <span>My Account</span>
             </Link>
 
             <button
               onClick={async () => {
+                setMobileOpen(false);
                 await fetch("/api/auth/logout", { method: "POST" });
                 router.push("/login");
                 router.refresh();
               }}
-              className={`${linkClass} text-left`}
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 text-left mt-2 border-t border-stone-100 dark:border-stone-800 pt-3"
             >
-              Logout
+              <LogOut size={17} />
+              <span>Sign Out</span>
             </button>
           </div>
         </div>

@@ -32,13 +32,35 @@ export default function CartPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10">
-      <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-        Shopping Cart
-      </h1>
-      <p className="mt-1 text-gray-500 dark:text-gray-400">
-        {itemCount} item{itemCount > 1 ? "s" : ""}
-      </p>
+    <div className="min-h-screen bg-[#f8f6f1] dark:bg-[#12100e] py-10 px-4 sm:px-6 lg:px-8 font-sans text-stone-800 dark:text-stone-200">
+      <div className="mx-auto max-w-4xl">
+        
+        {/* Navigation Back Bar */}
+        <div className="flex items-center justify-between mb-6">
+          <Link
+            href="/shop"
+            className="inline-flex items-center gap-2 rounded-2xl border border-stone-300 bg-white px-4 py-2.5 text-xs font-bold text-stone-800 shadow-sm transition hover:bg-stone-100 dark:border-stone-800 dark:bg-stone-900 dark:text-white"
+          >
+            <span className="text-[#b49663]">←</span>
+            <span>Continue Shopping</span>
+          </Link>
+
+          <Link href="/account" className="text-xs font-bold text-[#b49663] dark:text-[#c5a059] hover:underline">
+            My Account
+          </Link>
+        </div>
+
+        {/* Hero Header */}
+        <div className="rounded-[28px] border border-[#e2d5c3] bg-white p-8 shadow-lg dark:border-[#382f25] dark:bg-[#1a1613] mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="font-serif text-3xl font-bold text-stone-900 dark:text-white">
+              Shopping Cart
+            </h1>
+            <p className="mt-1 text-xs text-stone-600 dark:text-stone-300">
+              {itemCount} item{itemCount > 1 ? "s" : ""} selected for checkout
+            </p>
+          </div>
+        </div>
 
       <div className="mt-8 space-y-4">
         {items.map((item) => (
@@ -118,5 +140,6 @@ export default function CartPage() {
         </Link>
       </div>
     </div>
-  );
+  </div>
+);
 }

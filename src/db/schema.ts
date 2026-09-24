@@ -53,6 +53,11 @@ export const orders = pgTable("orders", {
   total: numeric("total", { precision: 10, scale: 2 }).notNull(),
   razorpayPaymentId: text("razorpay_payment_id"),
   razorpayOrderId: text("razorpay_order_id"),
+  shiprocketOrderId: text("shiprocket_order_id"),
+  shiprocketShipmentId: text("shiprocket_shipment_id"),
+  shiprocketAwbCode: text("shiprocket_awb_code"),
+  courierName: text("courier_name"),
+  trackingUrl: text("tracking_url"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

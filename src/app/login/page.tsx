@@ -143,7 +143,7 @@ export default function LoginPage() {
           <div className="mx-auto w-full max-w-md">
 
             <div className="mb-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-indigo-600">
+              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[#b49663]">
                 Welcome back
               </p>
 
@@ -171,7 +171,7 @@ export default function LoginPage() {
                   required
                   autoComplete="email"
                   placeholder="you@example.com"
-                  className="mt-1.5 w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+                  className="mt-1.5 w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#b49663] focus:ring-4 focus:ring-[#b49663]/10"
                 />
               </div>
 
@@ -188,7 +188,7 @@ export default function LoginPage() {
                   required
                   autoComplete="current-password"
                   placeholder="••••••••"
-                  className="mt-1.5 w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+                  className="mt-1.5 w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#b49663] focus:ring-4 focus:ring-[#b49663]/10"
                 />
               </div>
 
@@ -202,7 +202,7 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={loadCaptcha}
-                    className="text-xs font-semibold text-indigo-600 transition hover:text-indigo-700"
+                    className="text-xs font-semibold text-[#b49663] transition hover:underline"
                   >
                     New question
                   </button>
@@ -221,7 +221,7 @@ export default function LoginPage() {
                   onChange={(e) => setCaptchaAnswer(e.target.value)}
                   required
                   placeholder="Enter your answer"
-                  className="mt-1.5 w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+                  className="mt-1.5 w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#b49663] focus:ring-4 focus:ring-[#b49663]/10"
                 />
               </div>
 

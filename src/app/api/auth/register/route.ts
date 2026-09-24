@@ -28,6 +28,17 @@ export async function POST(req: Request) {
     const sanitizedName = sanitizeString(name, 100);
     const sanitizedEmail = sanitizeEmail(email);
     
+    // Strict active email verification check
+    const emailParts = sanitizedEmail.split("@");
+    if (emailParts.length !== 2 || !emailParts[1].includes(".")) {
+      return NextResponse.json({ error: "Please provide a valid active email address." }, { status: 400 });
+    }
+    const domain = emailParts[1].toLowerCase();
+    const fakeDomains = ["asdf.com", "fake.com", "temp.com", "mailinator.com", "dispostable.com", "trashmail.com", "10minutemail.com", "test.com", "qwerty.com"];
+    if (fakeDomains.includes(domain)) {
+      return NextResponse.json({ error: "Disposable or fake email addresses are not allowed. Please enter your active email address." }, { status: 400 });
+    }
+    
     // Validate phone number
     const phoneRegex = /^(\+91)?[6-9]\d{9}$/;
     const sanitizedPhone = phone ? phone.replace(/\s/g, '') : '';

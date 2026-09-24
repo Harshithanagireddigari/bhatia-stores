@@ -8,6 +8,7 @@ import { useWishlist } from "@/components/WishlistContext";
 import { toast } from "sonner";
 import ProductImageZoom from "@/components/ProductImageZoom";
 import ProductReviewsSection from "@/components/ProductReviewsSection";
+import ProductCard from "@/components/ProductCard";
 import { getProductMeasurements } from "@/lib/product-spec";
 import { Ruler, PackageCheck } from "lucide-react";
 
@@ -35,6 +36,7 @@ export default function ProductPage({
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const { addItem } = useCart();
   const { toggleItem, hasItem } = useWishlist();
 
@@ -58,12 +60,24 @@ export default function ProductPage({
   }
 
   useEffect(() => {
-    async function fetchProduct() {
+    async function fetchProductData() {
       try {
-        const res = await fetch(`/api/products/${id}`);
+        const [res, allRes] = await Promise.all([
+          fetch(`/api/products/${id}`),
+          fetch(`/api/products`),
+        ]);
+
         if (res.ok) {
           const data = await res.json();
           setProduct(data);
+
+          if (allRes.ok) {
+            const allData: Product[] = await allRes.json();
+            const filtered = allData.filter((p) => p.id !== id);
+            // Sort to prioritize same category
+            filtered.sort((a, b) => (a.category === data.category ? -1 : 1));
+            setRelatedProducts(filtered.slice(0, 4));
+          }
         }
       } catch {
         // ignore
@@ -71,7 +85,7 @@ export default function ProductPage({
         setLoading(false);
       }
     }
-    fetchProduct();
+    fetchProductData();
   }, [id]);
 
   if (loading) {
@@ -97,13 +111,23 @@ export default function ProductPage({
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
-      <Link
-        href="/shop"
-        className="mb-6 inline-flex items-center text-sm font-semibold text-stone-600 hover:text-[#b49663] dark:text-stone-300 dark:hover:text-[#b49663]"
-      >
-        ← Back to Shop
-      </Link>
+    <div className="mx-auto max-w-6xl px-4 py-8 font-sans">
+      <div className="flex items-center justify-between mb-6">
+        <button
+          onClick={() => router.back()}
+          className="inline-flex items-center gap-2 rounded-2xl border border-stone-300 bg-white px-4 py-2.5 text-xs font-bold text-stone-800 shadow-sm transition hover:bg-stone-100 dark:border-stone-800 dark:bg-stone-900 dark:text-white"
+        >
+          <span className="text-[#b49663]">←</span>
+          <span>Go Back</span>
+        </button>
+
+        <Link
+          href="/shop"
+          className="text-xs font-bold text-[#b49663] dark:text-[#c5a059] hover:underline"
+        >
+          All Products & Catalog
+        </Link>
+      </div>
 
       <div className="grid gap-10 md:grid-cols-2">
         {/* Product image */}
@@ -112,12 +136,7 @@ export default function ProductPage({
             <ProductImageZoom
               src={product.image}
               alt={product.name}
-              galleryImages={[
-                product.image,
-                "/products/catalog/bhatia-catalogue-01.jpg",
-                "/products/new-stock/pgvt-01.jpg",
-                "/products/new-stock/gnam-dc-01.jpg",
-              ].filter((img, idx, arr) => arr.indexOf(img) === idx)}
+              galleryImages={[product.image]}
             />
           ) : (
             <div className="flex min-h-[24rem] items-center justify-center">
@@ -250,6 +269,34 @@ export default function ProductPage({
           )}
         </div>
       </div>
+
+      {/* Related / Similar Products Section */}
+      {relatedProducts.length > 0 && (
+        <section className="mt-16 border-t border-stone-200 pt-12 dark:border-stone-800 font-sans">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#b49663]">
+                DISCOVER MORE
+              </p>
+              <h2 className="mt-1 font-serif text-2xl md:text-3xl font-bold text-stone-900 dark:text-white">
+                More Products Like This
+              </h2>
+            </div>
+            <Link
+              href="/shop"
+              className="text-xs font-bold text-[#b49663] dark:text-[#c5a059] hover:underline"
+            >
+              View All Catalog →
+            </Link>
+          </div>
+
+          <div className="grid gap-6 grid-cols-2 md:grid-cols-4">
+            {relatedProducts.map((rel) => (
+              <ProductCard key={rel.id} product={rel} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Reviews Section */}
       <ProductReviewsSection productId={product.id} />

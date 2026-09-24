@@ -25,6 +25,8 @@ export const metadata: Metadata = {
   description: "Premium products with fast delivery and secure payments.",
 };
 
+import ConsentModal from "@/components/ConsentModal";
+
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
@@ -32,10 +34,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       className={`${inter.variable} ${poppins.variable}`}
       suppressHydrationWarning
     >
-      <body className="bg-gray-50 text-gray-900 antialiased transition-colors dark:bg-gray-950 dark:text-gray-100">
+      <body className="bg-[#f8f6f1] text-stone-900 antialiased transition-colors dark:bg-[#12100e] dark:text-stone-100 font-sans">
         <ThemeProvider>
           <CartProvider>
             <WishlistProvider>
+              <ConsentModal />
               <AppLayout>{children}</AppLayout>
               <Toaster position="top-right" richColors />
             </WishlistProvider>

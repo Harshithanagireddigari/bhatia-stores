@@ -7,6 +7,7 @@ import { and, eq, gt, gte, inArray, isNull, or } from "drizzle-orm";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { isRateLimited } from "@/lib/rate-limit";
 import { sendOrderNotifications, sendLowStockAlertEmail } from "@/lib/order-email";
+import { createShiprocketOrder, getShiprocketCredentials } from "@/lib/shiprocket";
 
 export async function GET() {
   const user = await getSessionUser();
@@ -225,6 +226,50 @@ export async function POST(req: Request) {
       phone,
       items: verifiedItems.map(({ product, quantity }) => ({ productName: product.name, quantity, price: product.price })),
     }).catch((error) => console.error("Order notification error:", error));
+
+    // Attempt automatic Shiprocket order creation if enabled
+    void (async () => {
+      try {
+        const creds = await getShiprocketCredentials();
+        if (creds && creds.autoPush !== false) {
+          const pincodeMatch = address.match(/\b\d{6}\b/);
+          const shiprocketResult = await createShiprocketOrder({
+            order_id: `BHATIA-${orderId.slice(0, 8).toUpperCase()}`,
+            order_date: new Date().toISOString().replace("T", " ").substring(0, 19),
+            billing_customer_name: customerName,
+            billing_address: address,
+            billing_city: city || "City",
+            billing_pincode: pincodeMatch ? pincodeMatch[0] : "110001",
+            billing_email: customerEmail,
+            billing_phone: phone,
+            payment_method: paymentMethod === "cod" ? "COD" : "Prepaid",
+            sub_total: finalTotal,
+            order_items: verifiedItems.map(({ product, quantity }) => ({
+              name: product.name,
+              sku: product.id.slice(0, 10),
+              units: quantity,
+              selling_price: Number(product.price),
+            })),
+          });
+
+          if (shiprocketResult.success) {
+            await db
+              .update(orders)
+              .set({
+                shiprocketOrderId: shiprocketResult.shiprocketOrderId,
+                shiprocketShipmentId: shiprocketResult.shipmentId,
+                shiprocketAwbCode: shiprocketResult.awbCode || null,
+                courierName: shiprocketResult.courierName || "Shiprocket Courier",
+                status: "shipped",
+              })
+              .where(eq(orders.id, orderId));
+          }
+        }
+      } catch (err) {
+        console.error("Auto Shiprocket push background error:", err);
+      }
+    })();
+
     return NextResponse.json(created[0], { status: 201 });
   } catch (error) {
     console.error("Create order error:", error);

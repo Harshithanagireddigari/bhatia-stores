@@ -187,7 +187,7 @@ export default function CheckoutPage() {
       try {
         const res = await fetch(`/api/pincode/${cleaned}`);
         const data = await res.json();
-        if (res.ok && data.deliveryAvailable !== undefined) {
+        if (res.ok && data.deliveryAvailable) {
           setLocationData(data);
           setForm((prev) => ({
             ...prev,
@@ -195,7 +195,7 @@ export default function CheckoutPage() {
             state: data.state || prev.state,
           }));
         } else {
-          setPincodeError(data.error || "Pincode not found");
+          setPincodeError(data.error || `Pincode ${cleaned} is invalid or not found.`);
           setLocationData(null);
         }
       } catch {
@@ -435,18 +435,33 @@ export default function CheckoutPage() {
   const isCodExceeded = Number.isFinite(codLimitNum) && codLimitNum > 0 && finalTotal > codLimitNum;
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10 font-sans">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Checkout</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Complete your order with secure delivery & payment
+    <div className="min-h-screen bg-[#f8f6f1] dark:bg-[#12100e] py-10 px-4 sm:px-6 lg:px-8 font-sans text-stone-800 dark:text-stone-200">
+      <div className="mx-auto max-w-5xl">
+        
+        {/* Navigation Back Bar */}
+        <div className="flex items-center justify-between mb-6">
+          <button
+            onClick={() => router.push("/cart")}
+            className="inline-flex items-center gap-2 rounded-2xl border border-stone-300 bg-white px-4 py-2.5 text-xs font-bold text-stone-800 shadow-sm transition hover:bg-stone-100 dark:border-stone-800 dark:bg-stone-900 dark:text-white"
+          >
+            <span className="text-[#b49663]">←</span>
+            <span>Back to Shopping Cart</span>
+          </button>
+
+          <div className="flex items-center gap-2 rounded-full bg-amber-50 px-4 py-1.5 text-xs font-semibold text-[#b49663] dark:bg-amber-950/40 dark:text-[#c5a059]">
+            <Lock size={14} /> 256-bit Encrypted Checkout
+          </div>
+        </div>
+
+        {/* Hero Header */}
+        <div className="rounded-[28px] border border-[#e2d5c3] bg-white p-8 shadow-lg dark:border-[#382f25] dark:bg-[#1a1613] mb-8">
+          <h1 className="font-serif text-3xl font-bold text-stone-900 dark:text-white">
+            Secure Checkout
+          </h1>
+          <p className="mt-1 text-xs text-stone-600 dark:text-stone-300">
+            Complete your order with verified delivery & payment options.
           </p>
         </div>
-        <div className="flex items-center gap-2 rounded-full bg-indigo-50 px-4 py-1.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
-          <Lock size={14} /> 256-bit Encrypted Checkout
-        </div>
-      </div>
 
       <div className="mt-8 grid gap-8 md:grid-cols-5">
         {/* Form */}
@@ -467,7 +482,6 @@ export default function CheckoutPage() {
                   required
                   className="mt-1 w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
                   placeholder="John Doe"
-                  readOnly={!!user?.name}
                 />
               </div>
               <div>
@@ -536,22 +550,28 @@ export default function CheckoutPage() {
                 </div>
 
                 {/* Pincode Status feedback */}
-                {locationData && (
-                  <div className={`mt-2 flex items-center gap-2 rounded-xl p-3 text-xs font-medium ${locationData.deliveryAvailable ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300" : "bg-red-50 text-red-800 dark:bg-red-950/40 dark:text-red-300"}`}>
-                    {locationData.deliveryAvailable ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+                {locationData && locationData.deliveryAvailable && (
+                  <div className="mt-2 flex items-center gap-2 rounded-xl bg-emerald-50 p-3 text-xs font-medium text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
+                    <CheckCircle2 size={16} />
                     <div>
                       <p>
-                        {locationData.deliveryAvailable
-                          ? `✓ Delivery available to ${locationData.postOffice || locationData.city}, ${locationData.district || ""}, ${locationData.state}`
-                          : `✕ Delivery currently unavailable for ${locationData.pincode}`}
+                        ✓ Delivery available to{" "}
+                        {[
+                          locationData.postOffice && !locationData.postOffice.startsWith("Pincode ") ? locationData.postOffice : null,
+                          locationData.district,
+                          locationData.state,
+                        ]
+                          .filter(Boolean)
+                          .join(", ") || locationData.pincode}
                       </p>
                     </div>
                   </div>
                 )}
                 {pincodeError && (
-                  <p className="mt-1 text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
-                    <AlertCircle size={13} /> {pincodeError}
-                  </p>
+                  <div className="mt-2 flex items-center gap-2 rounded-xl bg-red-50 p-3 text-xs font-medium text-red-800 dark:bg-red-950/40 dark:text-red-300">
+                    <AlertCircle size={16} />
+                    <p>{pincodeError}</p>
+                  </div>
                 )}
               </div>
 
@@ -789,5 +809,6 @@ export default function CheckoutPage() {
         </div>
       </div>
     </div>
-  );
+  </div>
+);
 }

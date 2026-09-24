@@ -53,12 +53,10 @@ html:not(.dark) h6 {
 html.dark {
   color-scheme: dark;
   background-color: #12100e !important;
-  color: #f5f0e7 !important;
 }
 
 html.dark body {
   background-color: #12100e !important;
-  color: #f5f0e7 !important;
 }
 
 /* Custom scrollbar */

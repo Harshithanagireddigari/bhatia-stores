@@ -102,7 +102,7 @@ function ShopContent() {
         </form>
 
         {/* Category filter */}
-        <div className="flex flex-wrap gap-2">
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none sm:flex-wrap">
           {categoryFilters.map((cat) => (
             <button
               key={cat.name}
@@ -111,7 +111,7 @@ function ShopContent() {
               title={cat.productCount === 0 ? "Add products to this category in Admin Products first." : undefined}
               className={`rounded-full px-4 py-2 text-sm font-medium transition ${
                 (cat.name === "All" && !category) || category === cat.name
-                  ? "bg-[#4f46e5] text-white shadow-sm"
+                  ? "bg-[#b49663] text-white shadow-sm"
                   : cat.productCount === 0
                     ? "cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"

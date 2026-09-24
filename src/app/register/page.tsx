@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
+import { Loader2, RefreshCw } from "lucide-react";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -13,9 +14,8 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
 
   const validatePhone = (phone: string): boolean => {
-    // Indian phone number validation: +91 followed by 10 digits
     const phoneRegex = /^(\+91)?[6-9]\d{9}$/;
-    return phoneRegex.test(phone.replace(/\s/g, ''));
+    return phoneRegex.test(phone.replace(/\s/g, ""));
   };
 
   async function loadCaptcha() {
@@ -40,14 +40,13 @@ export default function RegisterPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    
-    // Validate phone number
+
     if (!validatePhone(form.phone)) {
       toast.error("Please enter a valid Indian phone number (+91 followed by 10 digits)");
       setLoading(false);
       return;
     }
-    
+
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
@@ -78,17 +77,26 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-[80vh] max-w-md items-center px-4">
-      <div className="w-full rounded-2xl border border-gray-200 bg-white p-8 dark:border-gray-700 dark:bg-gray-800">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Register</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Create your Bhatia Stores account
-        </p>
+    <div className="min-h-[85vh] bg-[#f8f6f1] dark:bg-[#12100e] flex items-center justify-center px-4 py-10 transition-colors font-sans">
+      <div className="w-full max-w-md rounded-[28px] border border-[#e2d5c3] bg-white p-8 shadow-xl dark:border-[#382f25] dark:bg-[#1a1613]">
+        
+        {/* BRAND LUXURY HEADER */}
+        <div className="text-center">
+          <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#b49663] dark:text-[#c5a059]">
+            THE BHATIAS HARDWARE STORE
+          </p>
+          <h1 className="mt-2 font-serif text-3xl font-bold text-stone-900 dark:text-white">
+            Create Account
+          </h1>
+          <p className="mt-1 text-xs text-stone-600 dark:text-stone-300">
+            Join Bhatia Stores for instant orders & saved wishlist
+          </p>
+        </div>
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+        <form onSubmit={handleSubmit} className="mt-6 space-y-4 text-xs">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Name
+            <label className="block font-bold text-stone-700 dark:text-stone-300 mb-1">
+              Full Name *
             </label>
             <input
               type="text"
@@ -96,13 +104,14 @@ export default function RegisterPage() {
               value={form.name}
               onChange={handleChange}
               required
-              className="mt-1 w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
               placeholder="John Doe"
+              className="w-full rounded-2xl border border-stone-300 bg-stone-50 p-3.5 text-stone-900 outline-none transition focus:border-[#b49663] dark:border-[#3c3328] dark:bg-[#25201b] dark:text-white dark:focus:border-[#c5a059]"
             />
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Email
+            <label className="block font-bold text-stone-700 dark:text-stone-300 mb-1">
+              Email Address *
             </label>
             <input
               type="email"
@@ -110,13 +119,14 @@ export default function RegisterPage() {
               value={form.email}
               onChange={handleChange}
               required
-              className="mt-1 w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
               placeholder="you@example.com"
+              className="w-full rounded-2xl border border-stone-300 bg-stone-50 p-3.5 text-stone-900 outline-none transition focus:border-[#b49663] dark:border-[#3c3328] dark:bg-[#25201b] dark:text-white dark:focus:border-[#c5a059]"
             />
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Phone *
+            <label className="block font-bold text-stone-700 dark:text-stone-300 mb-1">
+              Phone Number *
             </label>
             <input
               type="tel"
@@ -125,17 +135,17 @@ export default function RegisterPage() {
               onChange={handleChange}
               required
               pattern="^(\+91[\s-]?)?[6-9]\d{9}$"
-              title="Enter valid Indian phone number (e.g., +91 9876543210 or 9876543210)"
-              className="mt-1 w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
               placeholder="+91 9876543210"
+              className="w-full rounded-2xl border border-stone-300 bg-stone-50 p-3.5 text-stone-900 outline-none transition focus:border-[#b49663] dark:border-[#3c3328] dark:bg-[#25201b] dark:text-white dark:focus:border-[#c5a059]"
             />
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              Format: 10-digit Indian phone number (optionally starting with +91)
+            <p className="mt-1 text-[11px] text-stone-500 dark:text-stone-400">
+              10-digit Indian phone number (+91 optional)
             </p>
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Password
+            <label className="block font-bold text-stone-700 dark:text-stone-300 mb-1">
+              Password *
             </label>
             <input
               type="password"
@@ -144,26 +154,27 @@ export default function RegisterPage() {
               onChange={handleChange}
               required
               minLength={6}
-              className="mt-1 w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
               placeholder="••••••••"
+              className="w-full rounded-2xl border border-stone-300 bg-stone-50 p-3.5 text-stone-900 outline-none transition focus:border-[#b49663] dark:border-[#3c3328] dark:bg-[#25201b] dark:text-white dark:focus:border-[#c5a059]"
             />
           </div>
 
           <div>
-            <div className="flex items-center justify-between gap-3">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Human verification *
+            <div className="flex items-center justify-between gap-3 mb-1">
+              <label className="block font-bold text-stone-700 dark:text-stone-300">
+                Human Verification *
               </label>
               <button
                 type="button"
                 onClick={loadCaptcha}
-                className="text-xs font-medium text-indigo-600 hover:underline dark:text-indigo-400"
+                className="flex items-center gap-1 text-[11px] font-bold text-[#b49663] dark:text-[#c5a059] hover:underline"
               >
-                New question
+                <RefreshCw size={12} />
+                <span>New question</span>
               </button>
             </div>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              {captchaQuestion || "Loading question..."}
+            <p className="text-xs text-stone-600 dark:text-stone-300 mb-1 font-medium">
+              {captchaQuestion || "Loading math challenge..."}
             </p>
             <input
               type="number"
@@ -171,21 +182,29 @@ export default function RegisterPage() {
               value={captchaAnswer}
               onChange={(e) => setCaptchaAnswer(e.target.value)}
               required
-              className="mt-2 w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
               placeholder="Your answer"
+              className="w-full rounded-2xl border border-stone-300 bg-stone-50 p-3.5 text-stone-900 outline-none transition focus:border-[#b49663] dark:border-[#3c3328] dark:bg-[#25201b] dark:text-white dark:focus:border-[#c5a059]"
             />
           </div>
 
+          {/* LUXURY GOLD SUBMIT BUTTON */}
           <button
             type="submit"
             disabled={loading || !captchaQuestion}
-            className="w-full rounded-full bg-indigo-600 py-3 font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-50"
+            className="w-full rounded-2xl bg-[#c5a059] hover:bg-[#b49663] py-4 font-bold text-stone-900 dark:text-stone-900 shadow-md transition disabled:opacity-50 flex items-center justify-center gap-2 text-sm mt-2"
           >
-            {loading ? "Creating account..." : "Register"}
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Creating Account...</span>
+              </>
+            ) : (
+              <span>Register</span>
+            )}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
+        <p className="mt-6 text-center text-xs text-stone-600 dark:text-stone-400">
           Already have an account?{" "}
           <Link
             href={
@@ -193,7 +212,7 @@ export default function RegisterPage() {
                 ? `/login?redirect=${encodeURIComponent(new URLSearchParams(window.location.search).get("redirect")!)}`
                 : "/login"
             }
-            className="font-medium text-indigo-600 hover:underline dark:text-indigo-400"
+            className="font-bold text-[#b49663] dark:text-[#c5a059] hover:underline"
           >
             Login
           </Link>
