@@ -7,10 +7,16 @@ import { toast } from "sonner";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [form, setForm] = useState({ name: "", email: "", password: "", phone: "" });
   const [captchaQuestion, setCaptchaQuestion] = useState("");
   const [captchaAnswer, setCaptchaAnswer] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const validatePhone = (phone: string): boolean => {
+    // Indian phone number validation: +91 followed by 10 digits
+    const phoneRegex = /^(\+91)?[6-9]\d{9}$/;
+    return phoneRegex.test(phone.replace(/\s/g, ''));
+  };
 
   async function loadCaptcha() {
     try {
@@ -34,6 +40,14 @@ export default function RegisterPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
+    
+    // Validate phone number
+    if (!validatePhone(form.phone)) {
+      toast.error("Please enter a valid Indian phone number (+91 followed by 10 digits)");
+      setLoading(false);
+      return;
+    }
+    
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
@@ -49,7 +63,12 @@ export default function RegisterPage() {
       }
 
       toast.success("Registered successfully!");
-      router.push("/shop");
+      const redirectUrl = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("redirect") : null;
+      if (redirectUrl) {
+        router.push(redirectUrl);
+      } else {
+        router.push("/shop");
+      }
       router.refresh();
     } catch {
       toast.error("Something went wrong");
@@ -94,6 +113,25 @@ export default function RegisterPage() {
               className="mt-1 w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
               placeholder="you@example.com"
             />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Phone *
+            </label>
+            <input
+              type="tel"
+              name="phone"
+              value={form.phone}
+              onChange={handleChange}
+              required
+              pattern="^(\+91[\s-]?)?[6-9]\d{9}$"
+              title="Enter valid Indian phone number (e.g., +91 9876543210 or 9876543210)"
+              className="mt-1 w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+              placeholder="+91 9876543210"
+            />
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Format: 10-digit Indian phone number (optionally starting with +91)
+            </p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -149,7 +187,14 @@ export default function RegisterPage() {
 
         <p className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
           Already have an account?{" "}
-          <Link href="/login" className="font-medium text-indigo-600 hover:underline dark:text-indigo-400">
+          <Link
+            href={
+              typeof window !== "undefined" && new URLSearchParams(window.location.search).get("redirect")
+                ? `/login?redirect=${encodeURIComponent(new URLSearchParams(window.location.search).get("redirect")!)}`
+                : "/login"
+            }
+            className="font-medium text-indigo-600 hover:underline dark:text-indigo-400"
+          >
             Login
           </Link>
         </p>

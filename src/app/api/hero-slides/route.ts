@@ -5,8 +5,16 @@ import { db } from "@/db";
 import { heroSlides } from "@/db/schema";
 import { getSessionUser } from "@/lib/auth";
 
-function isExternalImageUrl(value: unknown): value is string {
-  try { return new URL(String(value)).protocol === "https:"; } catch { return false; }
+function isValidImageUrl(value: unknown): value is string {
+  if (typeof value !== "string" || !value.trim()) return false;
+  const str = value.trim();
+  if (str.startsWith("/")) return true;
+  try {
+    const url = new URL(str);
+    return url.protocol === "http:" || url.protocol === "https:" || url.protocol === "data:";
+  } catch {
+    return false;
+  }
 }
 
 function cleanText(value: unknown, label: string, maximum: number): string {
@@ -32,7 +40,7 @@ export async function POST(req: Request) {
   if (!(await isAdmin())) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   try {
     const body = await req.json();
-    if (!isExternalImageUrl(body.imageUrl)) return NextResponse.json({ error: "Upload a hero image first." }, { status: 400 });
+    if (!isValidImageUrl(body.imageUrl)) return NextResponse.json({ error: "Upload a hero image first." }, { status: 400 });
     const existing = await db.select({ id: heroSlides.id }).from(heroSlides);
     if (existing.length >= 6) return NextResponse.json({ error: "You can have up to six hero slides. Remove one before adding another." }, { status: 400 });
     const id = uuidv4();

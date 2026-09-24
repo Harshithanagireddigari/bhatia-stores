@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth";
+import AdminLoginPortal from "@/components/admin/AdminLoginPortal";
 
 export default async function AdminLayout({
   children,
@@ -9,7 +9,7 @@ export default async function AdminLayout({
   const user = await getSessionUser();
 
   if (!user || user.role !== "admin") {
-    redirect("/login");
+    return <AdminLoginPortal />;
   }
 
   return <>{children}</>;

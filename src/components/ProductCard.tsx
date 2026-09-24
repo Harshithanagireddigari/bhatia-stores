@@ -33,12 +33,12 @@ export default function ProductCard({ product }: Props) {
   };
 
   return (
-    <div className="flex flex-col rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-lg dark:border-gray-700 dark:bg-gray-800">
+    <div className="group flex flex-col rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] hover:-translate-y-1 hover:shadow-xl dark:border-gray-700 dark:bg-gray-800">
       <Link href={`/product/${product.id}`} className="block">
         <div className="relative aspect-square overflow-hidden rounded-lg bg-gray-50 dark:bg-gray-900">
-          <Image src={product.image} alt={product.name} fill className="object-cover transition duration-300 hover:scale-105" />
+          <Image src={product.image} alt={product.name} fill className="object-cover transition-transform duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1)] group-hover:scale-105" />
         </div>
-        <h3 className="mt-3 text-base font-medium text-gray-900 dark:text-white line-clamp-2">{product.name}</h3>
+        <h3 className="mt-3 text-base font-medium text-gray-900 dark:text-white line-clamp-2 transition-colors duration-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">{product.name}</h3>
         <p className="mt-1 text-sm font-semibold text-[#4f46e5] dark:text-indigo-300">₹{Number(product.price).toLocaleString("en-IN")}</p>
       </Link>
       <div className="mt-3 flex items-center justify-between">

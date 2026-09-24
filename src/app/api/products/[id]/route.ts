@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { products } from "@/db/schema";
 import { getSessionUser } from "@/lib/auth";
 import { eq } from "drizzle-orm";
+import { sendLowStockAlertEmail } from "@/lib/order-email";
 
 function isExternalImageUrl(value: unknown): value is string {
   try {
@@ -49,6 +50,15 @@ export async function PUT(
     await db.update(products).set(updateData).where(eq(products.id, id));
 
     const updated = await db.select().from(products).where(eq(products.id, id)).limit(1);
+    if (updated[0] && Number(updated[0].stock) < 10) {
+      void sendLowStockAlertEmail({
+        id: updated[0].id,
+        name: updated[0].name,
+        stock: Number(updated[0].stock),
+        image: updated[0].image,
+        price: updated[0].price,
+      }).catch((err) => console.error("Low stock alert error:", err));
+    }
     return NextResponse.json(updated[0]);
   } catch (error) {
     console.error("Update product error:", error);

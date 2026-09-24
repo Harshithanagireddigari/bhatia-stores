@@ -5,8 +5,16 @@ import { heroSlides } from "@/db/schema";
 import { getSessionUser } from "@/lib/auth";
 import cloudinary from "@/lib/cloudinary";
 
-function isExternalImageUrl(value: unknown): value is string {
-  try { return new URL(String(value)).protocol === "https:"; } catch { return false; }
+function isValidImageUrl(value: unknown): value is string {
+  if (typeof value !== "string" || !value.trim()) return false;
+  const str = value.trim();
+  if (str.startsWith("/")) return true;
+  try {
+    const url = new URL(str);
+    return url.protocol === "http:" || url.protocol === "https:" || url.protocol === "data:";
+  } catch {
+    return false;
+  }
 }
 
 async function requireAdmin() {
@@ -23,7 +31,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const body = await req.json();
     const changes: Record<string, string | number | null> = {};
     if (body.imageUrl !== undefined) {
-      if (!isExternalImageUrl(body.imageUrl)) return NextResponse.json({ error: "Upload a valid hero image first." }, { status: 400 });
+      if (!isValidImageUrl(body.imageUrl)) return NextResponse.json({ error: "Upload a valid hero image first." }, { status: 400 });
       changes.imageUrl = body.imageUrl;
       changes.imagePublicId = typeof body.imagePublicId === "string" ? body.imagePublicId : null;
     }

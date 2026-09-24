@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCart } from "@/components/CartContext";
+import { getProductMeasurements } from "@/lib/product-spec";
 
 function isProductImage(image: string) {
   return image.startsWith("/") || image.startsWith("http") || image.startsWith("data:image/");
@@ -56,7 +57,15 @@ export default function CartPage() {
               <h3 className="font-semibold text-gray-900 dark:text-white">
                 {item.name}
               </h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              {(() => {
+                const specs = getProductMeasurements(item.name);
+                return (
+                  <p className="text-xs font-semibold text-[#b49663] mt-0.5">
+                    Dimensions: {specs.shortDimensions} {specs.coverage ? `• ${specs.coverage}` : ""}
+                  </p>
+                );
+              })()}
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                 ₹{item.price.toFixed(2)} each
               </p>
             </div>

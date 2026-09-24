@@ -23,6 +23,7 @@ export const users = pgTable("users", {
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
+  phone: text("phone"),
   role: roleEnum("role").notNull().default("customer"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -151,4 +152,18 @@ export const storeSettings = pgTable("store_settings", {
   key: text("key").primaryKey(),
   value: jsonb("value").notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const reviews = pgTable("reviews", {
+  id: text("id").primaryKey(),
+  productId: text("product_id")
+    .notNull()
+    .references(() => products.id, { onDelete: "cascade" }),
+  userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
+  userName: text("user_name").notNull(),
+  rating: integer("rating").notNull(),
+  title: text("title").notNull(),
+  comment: text("comment").notNull(),
+  verifiedPurchase: integer("verified_purchase").notNull().default(1),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });

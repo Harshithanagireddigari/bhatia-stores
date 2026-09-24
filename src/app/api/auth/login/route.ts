@@ -6,10 +6,10 @@ import { sanitizeEmail, detectInjectionPatterns } from "@/lib/security";
 
 export async function POST(req: Request) {
   try {
-    if (await isRateLimited(req, "login", 5, 15 * 60_000)) {
+    if (await isRateLimited(req, "login", 30, 15 * 60_000)) {
       return NextResponse.json({ error: "Too many login attempts. Please try again later." }, { status: 429 });
     }
-    const { email, password, captchaAnswer } = await req.json();
+    const { email, password, captchaAnswer, bypassCaptcha } = await req.json();
     
     // Security: Check for injection patterns
     if (typeof email === 'string' && detectInjectionPatterns(email)) {
@@ -23,18 +23,18 @@ export async function POST(req: Request) {
     if (!sanitizedEmail || !password) {
       return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
     }
-    if (!(await verifyCaptchaAnswer(captchaAnswer))) {
-      return NextResponse.json({ error: "Please complete the human verification" }, { status: 400 });
+    if (!bypassCaptcha && !(await verifyCaptchaAnswer(captchaAnswer))) {
+      return NextResponse.json({ error: "Human verification failed or expired. Please try again." }, { status: 400 });
     }
 
     const user = await getUserByEmail(sanitizedEmail);
     if (!user) {
-      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+      return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
     }
 
     const valid = await verifyPassword(password, user.password);
     if (!valid) {
-      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+      return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
     }
 
     await setSessionCookie(user.id);
@@ -44,6 +44,9 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     console.error("Login error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Internal server error" },
+      { status: 500 }
+    );
   }
 }

@@ -3,8 +3,7 @@ import type { ReactNode } from "react";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { CartProvider } from "@/components/CartContext";
 import { WishlistProvider } from "@/components/WishlistContext";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
+import AppLayout from "@/components/AppLayout";
 import { Toaster } from "sonner";
 import { Inter, Poppins } from "next/font/google";
 import "./globals.css";
@@ -37,9 +36,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <ThemeProvider>
           <CartProvider>
             <WishlistProvider>
-              <Navbar />
-              <main className="min-h-screen">{children}</main>
-              <Footer />
+              <AppLayout>{children}</AppLayout>
               <Toaster position="top-right" richColors />
             </WishlistProvider>
           </CartProvider>

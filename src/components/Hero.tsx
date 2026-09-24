@@ -71,7 +71,6 @@ export default function Hero({ slides = [] }: { slides?: HeroSlide[] }) {
 
         <div className="flex flex-wrap gap-3">
           <a href="/shop" className="rounded-full bg-[#e2bd72] px-6 py-3 text-sm font-bold text-[#24190b] transition hover:bg-[#f4d690]">Explore products</a>
-          <a href="https://wa.me/919120435950" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/5 px-6 py-3 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/10"><MessageCircle size={16} /> Get a WhatsApp quote</a>
         </div>
 
         <div className="flex flex-wrap gap-x-5 gap-y-3 pt-2 text-xs text-[#d0c9bf]"><span className="inline-flex items-center gap-1.5"><Star size={13} className="fill-[#e2bd72] text-[#e2bd72]" /> Premium selection</span><span className="inline-flex items-center gap-1.5"><Truck size={14} /> Reliable delivery</span><span className="inline-flex items-center gap-1.5"><ShieldCheck size={14} /> Secure checkout</span></div>

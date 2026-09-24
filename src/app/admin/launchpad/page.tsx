@@ -31,14 +31,52 @@ export default function LaunchpadPage() {
   async function uploadImage(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error("Please select a valid image file");
+      return;
+    }
+    
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be smaller than 5MB");
+      return;
+    }
+    
     setUploading(true);
-    const data = new FormData(); data.append("file", file); data.append("assetType", "hero");
+    const data = new FormData(); 
+    data.append("file", file); 
+    data.append("assetType", "hero");
+    
     try {
-      const res = await fetch("/api/upload", { method: "POST", body: data }); const result = await res.json();
-      if (!res.ok) throw new Error(result.error || "Image upload failed.");
-      setForm((current) => ({ ...current, imageUrl: result.imageUrl, imagePublicId: result.imagePublicId || "" }));
-      toast.success("Hero image uploaded to image storage.");
-    } catch (error) { toast.error(error instanceof Error ? error.message : "Image upload failed."); } finally { setUploading(false); event.target.value = ""; }
+      const res = await fetch("/api/upload", { 
+        method: "POST", 
+        body: data 
+      }); 
+      const result = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(result.error || "Image upload failed.");
+      }
+      
+      if (!result.imageUrl) {
+        throw new Error("No image URL returned from upload service");
+      }
+      
+      setForm((current) => ({ 
+        ...current, 
+        imageUrl: result.imageUrl, 
+        imagePublicId: result.imagePublicId || "" 
+      }));
+      toast.success("Hero image uploaded successfully!");
+    } catch (error) { 
+      console.error("Upload error:", error);
+      toast.error(error instanceof Error ? error.message : "Image upload failed."); 
+    } finally { 
+      setUploading(false); 
+      event.target.value = ""; 
+    }
   }
 
   async function saveSlide(event: FormEvent<HTMLFormElement>) {
@@ -126,14 +164,25 @@ export default function LaunchpadPage() {
                     </div>
                   )}
                 </div>
-                <label className="mt-4 flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700">
+                <label className="mt-4 flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed">
                   <Upload size={16} />
                   {uploading ? "Uploading…" : form.imageUrl ? "Replace hero image" : "Upload hero image"}
-                  <input type="file" accept="image/jpeg,image/png,image/webp" onChange={uploadImage} disabled={uploading} className="sr-only" />
+                  <input 
+                    type="file" 
+                    accept="image/jpeg,image/png,image/webp" 
+                    onChange={uploadImage} 
+                    disabled={uploading} 
+                    className="sr-only" 
+                  />
                 </label>
                 <p className="mt-3 text-center text-xs leading-5 text-gray-500 dark:text-gray-400">
                   JPG, PNG or WebP · up to 5 MB · stored securely on Cloudinary
                 </p>
+                {uploading && (
+                  <div className="mt-2 text-center text-xs text-indigo-600 dark:text-indigo-400">
+                    Uploading image...
+                  </div>
+                )}
               </div>
               <div className="grid content-start gap-4">
                 <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">

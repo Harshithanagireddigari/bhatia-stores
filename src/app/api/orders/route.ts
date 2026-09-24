@@ -1,14 +1,12 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { orders, orderItems, paymentOrders, storeSettings } from "@/db/schema";
+import { orders, orderItems, paymentOrders, storeSettings, offers, products } from "@/db/schema";
 import { getSessionUser } from "@/lib/auth";
 import { v4 as uuidv4 } from "uuid";
-import { and, eq, gt } from "drizzle-orm";
-import { inArray } from "drizzle-orm";
-import { products } from "@/db/schema";
+import { and, eq, gt, gte, inArray, isNull, or } from "drizzle-orm";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { isRateLimited } from "@/lib/rate-limit";
-import { sendOrderNotifications } from "@/lib/order-email";
+import { sendOrderNotifications, sendLowStockAlertEmail } from "@/lib/order-email";
 
 export async function GET() {
   const user = await getSessionUser();
@@ -16,7 +14,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let query = db.select().from(orders).orderBy(orders.createdAt);
+  const query = db.select().from(orders).orderBy(orders.createdAt);
 
   if (user.role === "customer") {
     const all = await query;
@@ -38,12 +36,34 @@ export async function POST(req: Request) {
     if (await isRateLimited(req, "order", 10, 15 * 60_000)) {
       return NextResponse.json({ error: "Too many order attempts. Please try again later." }, { status: 429 });
     }
-    const { items, customerName, customerEmail, address, city, phone, paymentMethod, razorpayPaymentId, razorpayOrderId, razorpaySignature } =
-      await req.json();
+    const {
+      items,
+      customerName,
+      customerEmail,
+      address,
+      city,
+      phone,
+      paymentMethod,
+      razorpayPaymentId,
+      razorpayOrderId,
+      razorpaySignature,
+      couponCode,
+    } = await req.json();
 
     if (!Array.isArray(items) || !items.length || !customerName || !customerEmail || !address || !phone) {
       return NextResponse.json({ error: "All fields are required" }, { status: 400 });
     }
+
+    // Phone validation
+    const phoneClean = phone.replace(/\s/g, "");
+    const phoneRegex = /^(\+91)?[6-9]\d{9}$/;
+    if (!phoneRegex.test(phoneClean)) {
+      return NextResponse.json(
+        { error: "Invalid Indian phone number format (+91 followed by 10 digits starting with 6-9)" },
+        { status: 400 }
+      );
+    }
+
     if (paymentMethod !== "razorpay" && paymentMethod !== "cod") {
       return NextResponse.json({ error: "Invalid payment method" }, { status: 400 });
     }
@@ -58,13 +78,41 @@ export async function POST(req: Request) {
       if (!Number.isInteger(quantity) || quantity < 1 || quantity > product.stock) throw new Error("Invalid cart quantity");
       return { product, quantity };
     });
-    const total = verifiedItems.reduce((sum, item) => sum + Number(item.product.price) * item.quantity, 0);
+    const subtotal = verifiedItems.reduce((sum, item) => sum + Number(item.product.price) * item.quantity, 0);
+
+    let discount = 0;
+    if (typeof couponCode === "string" && couponCode.trim()) {
+      const cleanCode = couponCode.trim().toUpperCase();
+      const now = new Date();
+      const validOffer = await db
+        .select()
+        .from(offers)
+        .where(
+          and(
+            eq(offers.code, cleanCode),
+            eq(offers.isActive, 1),
+            or(isNull(offers.expiresAt), gte(offers.expiresAt, now))
+          )
+        )
+        .limit(1);
+
+      if (validOffer[0]) {
+        const val = Number(validOffer[0].discountValue);
+        discount = validOffer[0].discountType === "percent"
+          ? (subtotal * val) / 100
+          : val;
+        discount = Math.min(subtotal, Math.max(0, discount));
+      }
+    }
+
+    const finalTotal = Math.max(0, subtotal - discount);
+
     const storeControl = await db.select().from(storeSettings).where(eq(storeSettings.key, "store")).limit(1);
     const controls = (storeControl[0]?.value || {}) as { prepaidEnabled?: boolean; codEnabled?: boolean; codLimit?: string };
     if (paymentMethod === "cod") {
       if (controls.codEnabled === false) return NextResponse.json({ error: "Cash on delivery is currently unavailable" }, { status: 400 });
       const codLimit = Number(controls.codLimit);
-      if (Number.isFinite(codLimit) && codLimit > 0 && total > codLimit) return NextResponse.json({ error: `Cash on delivery is available up to ₹${codLimit}` }, { status: 400 });
+      if (Number.isFinite(codLimit) && codLimit > 0 && finalTotal > codLimit) return NextResponse.json({ error: `Cash on delivery is available up to ₹${codLimit}` }, { status: 400 });
     }
     if (paymentMethod === "razorpay" && controls.prepaidEnabled === false) {
       return NextResponse.json({ error: "Prepaid payments are currently unavailable" }, { status: 400 });
@@ -86,7 +134,7 @@ export async function POST(req: Request) {
           gt(paymentOrders.expiresAt, new Date()),
         ))
         .limit(1);
-      if (!intent[0] || intent[0].amountPaise !== Math.round(total * 100) || intent[0].currency !== "INR") {
+      if (!intent[0] || intent[0].amountPaise !== Math.round(finalTotal * 100) || intent[0].currency !== "INR") {
         return NextResponse.json({ error: "Payment does not match this checkout" }, { status: 400 });
       }
       const expectedItems = intent[0].items as Array<{ productId: string; quantity: number; price: string }>;
@@ -99,7 +147,7 @@ export async function POST(req: Request) {
       if (razorpaySignature.length !== expected.length || !timingSafeEqual(Buffer.from(razorpaySignature), Buffer.from(expected))) {
         return NextResponse.json({ error: "Payment verification failed" }, { status: 400 });
       }
-      // Verify with Razorpay as well, so a signature cannot be replayed for a different amount or order.
+      // Verify with Razorpay as well
       const Razorpay = require("razorpay");
       const razorpay = new Razorpay({ key_id: razorpayKeyId, key_secret: razorpaySecret });
       const payment = await razorpay.payments.fetch(razorpayPaymentId);
@@ -133,7 +181,7 @@ export async function POST(req: Request) {
         city: city || "",
         phone,
         status: "pending",
-        total: total.toString(),
+        total: finalTotal.toString(),
         razorpayPaymentId: paymentMethod === "cod" ? "cash_on_delivery" : razorpayPaymentId,
         razorpayOrderId: paymentMethod === "cod" ? null : razorpayOrderId,
       });
@@ -147,6 +195,21 @@ export async function POST(req: Request) {
           quantity: item.quantity,
           price: item.product.price,
         });
+
+        // Decrement product stock in DB
+        const updatedStock = Math.max(0, item.product.stock - item.quantity);
+        await tx.update(products).set({ stock: updatedStock }).where(eq(products.id, item.product.id));
+
+        // Automatically trigger low stock alert to owner when stock < 10
+        if (updatedStock < 10) {
+          void sendLowStockAlertEmail({
+            id: item.product.id,
+            name: item.product.name,
+            stock: updatedStock,
+            image: item.product.image,
+            price: item.product.price,
+          }).catch((err) => console.error("Low stock email dispatch error:", err));
+        }
       }
     });
 
@@ -155,7 +218,7 @@ export async function POST(req: Request) {
       id: orderId,
       customerName,
       customerEmail,
-      total: total.toString(),
+      total: finalTotal.toString(),
       paymentMethod,
       address,
       city: city || "",

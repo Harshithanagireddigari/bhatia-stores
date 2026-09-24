@@ -1,8 +1,17 @@
 "use client";
 
-import { Search, Bell, User } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Search, Bell, User, Sun, Moon } from "lucide-react";
+import { useTheme } from "next-themes";
 
 export default function Header() {
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const today = new Date().toLocaleDateString("en-IN", {
     weekday: "long",
     year: "numeric",
@@ -11,7 +20,7 @@ export default function Header() {
   });
 
   return (
-    <header className="sticky top-0 z-40 bg-white border-b border-gray-200 px-6 py-4 dark:border-gray-700 dark:bg-gray-800">
+    <header className="sticky top-0 z-40 bg-white border-b border-gray-200 px-6 py-4 dark:border-gray-800 dark:bg-gray-900">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -27,12 +36,24 @@ export default function Header() {
             <input
               type="text"
               placeholder="Search..."
-              className="w-64 rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              className="w-64 rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             />
           </div>
 
+          {/* Theme Toggle */}
+          {mounted && (
+            <button
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="rounded-full border border-gray-200 p-2 text-gray-600 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+              aria-label="Toggle theme"
+              title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {theme === "dark" ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} />}
+            </button>
+          )}
+
           {/* Notifications */}
-          <button className="relative rounded-lg p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700">
+          <button className="relative rounded-lg p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800">
             <Bell className="h-5 w-5" />
             <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500" />
           </button>

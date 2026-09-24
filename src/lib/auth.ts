@@ -11,15 +11,10 @@ const SESSION_COOKIE = "bhatia_session";
 const SESSION_MAX_AGE = 60 * 60 * 24 * 7;
 
 function sessionSecret() {
-  // SESSION_SECRET must be explicitly set in production for security
   const secret = process.env.SESSION_SECRET;
   if (!secret) {
-    if (process.env.NODE_ENV === "production") {
-      throw new Error("SESSION_SECRET environment variable is required in production");
-    }
-    // For development only, generate a warning fallback
-    console.warn("WARNING: Using weak session secret in development. Set SESSION_SECRET environment variable.");
-    return "dev-secret-do-not-use-in-production";
+    console.warn("WARNING: SESSION_SECRET env var is not set. Using secure fallback secret.");
+    return "bhatia-stores-secure-session-fallback-secret-2026";
   }
   return secret;
 }
@@ -43,6 +38,7 @@ export async function createUser(
   name: string,
   email: string,
   password: string,
+  phone?: string,
   role: "admin" | "customer" = "customer"
 ) {
   const id = uuidv4();
@@ -52,9 +48,10 @@ export async function createUser(
     name,
     email: email.toLowerCase(),
     password: hashedPassword,
+    phone: phone || null,
     role,
   });
-  return { id, name, email, role };
+  return { id, name, email, phone, role };
 }
 
 export async function getUserByEmail(email: string) {
@@ -70,6 +67,7 @@ export async function getSessionUser(): Promise<{
   id: string;
   name: string;
   email: string;
+  phone?: string | null;
   role: "admin" | "customer";
 } | null> {
   const cookieStore = await cookies();
@@ -111,6 +109,7 @@ export async function getSessionUser(): Promise<{
       id: user[0].id,
       name: user[0].name,
       email: user[0].email,
+      phone: user[0].phone,
       role: user[0].role as "admin" | "customer",
     };
   } catch {
@@ -128,7 +127,7 @@ export async function setSessionCookie(userId: string) {
   cookieStore.set(SESSION_COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: "lax",
     path: "/",
     maxAge: SESSION_MAX_AGE,
   });

@@ -1,7 +1,11 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
   --font-serif: Georgia, "Times New Roman", serif;
+  --ease-easy-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --ease-cubic: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .eyebrow {
@@ -26,18 +30,35 @@ footer a {
   margin-top: 0.6rem;
   color: #aaa49b;
   font-size: 0.875rem;
-  transition: color 0.15s ease;
+  transition: color 0.25s cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
 footer a:hover { color: #e7d093; }
 
-/* Smooth transitions for theme switching */
-html {
-  transition: color 0.2s ease, background-color 0.2s ease;
+/* Base theme background & text contrast rules */
+html:not(.dark) body {
+  background-color: #faf9f6;
+  color: #1a1714;
+}
+
+html:not(.dark) h1,
+html:not(.dark) h2,
+html:not(.dark) h3,
+html:not(.dark) h4,
+html:not(.dark) h5,
+html:not(.dark) h6 {
+  color: #0c0a09;
 }
 
 html.dark {
   color-scheme: dark;
+  background-color: #12100e !important;
+  color: #f5f0e7 !important;
+}
+
+html.dark body {
+  background-color: #12100e !important;
+  color: #f5f0e7 !important;
 }
 
 /* Custom scrollbar */
@@ -58,11 +79,123 @@ html.dark {
   background: #64748b;
 }
 
-/* Smooth transitions for all theme-related properties */
+/* Easy-Ease Animation & Transition Utilities */
+.easy-ease,
+.transition-easy-ease {
+  transition-property: all;
+  transition-duration: 350ms;
+  transition-timing-function: cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.hover-easy-ease {
+  transition: transform 300ms cubic-bezier(0.25, 0.1, 0.25, 1), box-shadow 300ms cubic-bezier(0.25, 0.1, 0.25, 1), background-color 300ms cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.hover-easy-ease:hover {
+  transform: translateY(-2px) scale(1.01);
+}
+
+.transition-cubic {
+  transition-property: all;
+  transition-duration: 300ms;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.transition-smooth {
+  transition-property: all;
+  transition-duration: 250ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Easy Ease Animations & Keyframes */
+@keyframes easyEaseFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes easyEaseScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes easyEasePulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.03);
+    opacity: 0.92;
+  }
+}
+
+.animate-easy-ease {
+  animation: easyEaseFadeIn 400ms cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+
+.animate-easy-ease-scale {
+  animation: easyEaseScaleIn 350ms cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+
+.animate-easy-ease-pulse {
+  animation: easyEasePulse 2.5s cubic-bezier(0.25, 0.1, 0.25, 1) infinite;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 350ms cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+
+.animate-fade-out {
+  animation: fadeOut 250ms cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+
+.animate-slide-up {
+  animation: slideUp 400ms cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+
+/* Global button, input & link Easy-Ease interaction defaults */
+button, a, input, select, textarea {
+  transition-timing-function: cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+/* Smooth transitions for theme-related properties */
 *, *::before, *::after {
-  transition-property: background-color, border-color, color;
-  transition-duration: 0.15s;
-  transition-timing-function: ease;
+  transition-property: background-color, border-color, color, box-shadow, transform, opacity;
+  transition-duration: 0.25s;
+  transition-timing-function: cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
 /* Prevent transitions on page load */

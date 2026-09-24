@@ -9,7 +9,7 @@ export async function POST(req: Request) {
     if (await isRateLimited(req, "register", 5, 15 * 60_000)) {
       return NextResponse.json({ error: "Too many registration attempts. Please try again later." }, { status: 429 });
     }
-    const { name, email, password, captchaAnswer } = await req.json();
+    const { name, email, password, phone, captchaAnswer } = await req.json();
     
     // Security: Check for injection patterns
     if (typeof name === 'string' && detectInjectionPatterns(name)) {
@@ -21,9 +21,19 @@ export async function POST(req: Request) {
     if (typeof password === 'string' && detectInjectionPatterns(password)) {
       return NextResponse.json({ error: "Invalid input detected" }, { status: 400 });
     }
+    if (typeof phone === 'string' && detectInjectionPatterns(phone)) {
+      return NextResponse.json({ error: "Invalid input detected" }, { status: 400 });
+    }
     
     const sanitizedName = sanitizeString(name, 100);
     const sanitizedEmail = sanitizeEmail(email);
+    
+    // Validate phone number
+    const phoneRegex = /^(\+91)?[6-9]\d{9}$/;
+    const sanitizedPhone = phone ? phone.replace(/\s/g, '') : '';
+    if (phone && !phoneRegex.test(sanitizedPhone)) {
+      return NextResponse.json({ error: "Invalid phone number format" }, { status: 400 });
+    }
     
     if (!sanitizedName || !sanitizedEmail || !password) {
       return NextResponse.json({ error: "All fields are required" }, { status: 400 });
@@ -42,7 +52,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Email already registered" }, { status: 409 });
     }
 
-    const user = await createUser(sanitizedName, sanitizedEmail, password, "customer");
+    const user = await createUser(sanitizedName, sanitizedEmail, password, sanitizedPhone, "customer");
     await setSessionCookie(user.id);
 
     return NextResponse.json({ user }, { status: 201 });

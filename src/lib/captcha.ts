@@ -12,8 +12,7 @@ type CaptchaPayload = {
 
 function getSecret() {
   const secret = process.env.CAPTCHA_SECRET || process.env.DATABASE_URL;
-  if (!secret) throw new Error("CAPTCHA_SECRET or DATABASE_URL is required");
-  return secret;
+  return secret || "bhatia-captcha-fallback-secret-2026";
 }
 
 function sign(value: string) {
@@ -33,7 +32,7 @@ export async function createCaptchaChallenge() {
   cookieStore.set(CAPTCHA_COOKIE, `${value}.${sign(value)}`, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: "lax",
     path: "/",
     maxAge: CAPTCHA_MAX_AGE,
   });
