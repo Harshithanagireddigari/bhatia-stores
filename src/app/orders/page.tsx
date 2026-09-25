@@ -11,6 +11,7 @@ interface Order {
   total: string;
   customerName: string;
   createdAt: string;
+  deliveredAt?: string | null;
   razorpayPaymentId: string | null;
 }
 

@@ -34,7 +34,22 @@ export const products = pgTable("products", {
   description: text("description").notNull(),
   price: numeric("price", { precision: 10, scale: 2 }).notNull(),
   image: text("image").notNull(),
+  images: jsonb("images"),
+  videoUrl: text("video_url"),
   category: text("category").notNull(),
+  brand: text("brand").default("Bhatia Premium"),
+  finish: text("finish").default("Chrome"),
+  mountType: text("mount_type").default("Wall Mount"),
+  material: text("material").default("Brass"),
+  dimensions: text("dimensions").default("Standard"),
+  warranty: text("warranty").default("10 Years Manufacturer Warranty"),
+  waterSaving: integer("water_saving").notNull().default(1),
+  antiRust: integer("anti_rust").notNull().default(1),
+  sensorType: integer("sensor_type").notNull().default(0),
+  suiteRoom: text("suite_room"),
+  suiteStep: text("suite_step"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  isFeatured: integer("is_featured").notNull().default(0),
   stock: integer("stock").notNull().default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -58,6 +73,7 @@ export const orders = pgTable("orders", {
   shiprocketAwbCode: text("shiprocket_awb_code"),
   courierName: text("courier_name"),
   trackingUrl: text("tracking_url"),
+  deliveredAt: timestamp("delivered_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -170,5 +186,49 @@ export const reviews = pgTable("reviews", {
   title: text("title").notNull(),
   comment: text("comment").notNull(),
   verifiedPurchase: integer("verified_purchase").notNull().default(1),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const returns = pgTable("returns", {
+  id: text("id").primaryKey(),
+  orderId: text("order_id")
+    .notNull()
+    .references(() => orders.id, { onDelete: "cascade" }),
+  productId: text("product_id")
+    .notNull()
+    .references(() => products.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  requestType: text("request_type").notNull().default("return"), // 'return' or 'exchange'
+  reason: text("reason").notNull(),
+  details: text("details"),
+  status: text("status").notNull().default("pending"), // 'pending', 'approved', 'rejected', 'completed'
+  adminComment: text("admin_comment"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const boqRequests = pgTable("boq_requests", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone").notNull(),
+  projectType: text("project_type").notNull(),
+  city: text("city").notNull(),
+  estimatedBudget: text("estimated_budget"),
+  notes: text("notes"),
+  fileUrl: text("file_url"),
+  status: text("status").notNull().default("pending"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const notifications = pgTable("notifications", {
+  id: text("id").primaryKey(),
+  type: text("type").notNull(), // 'boq_quote' | 'return_request' | 'order_placed'
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  link: text("link"),
+  isRead: integer("is_read").notNull().default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

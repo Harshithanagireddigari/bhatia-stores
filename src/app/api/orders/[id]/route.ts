@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { orders, orderItems } from "@/db/schema";
 import { getSessionUser } from "@/lib/auth";
 import { eq } from "drizzle-orm";
+import { sendCustomerOrderWhatsAppSMS } from "@/lib/whatsapp-sms";
 
 export async function GET(
   _req: Request,
@@ -50,8 +51,26 @@ export async function PATCH(
     return NextResponse.json({ error: "Invalid status" }, { status: 400 });
   }
 
-  await db.update(orders).set({ status }).where(eq(orders.id, id));
+  const updatePayload: Record<string, any> = { status };
+  if (status === "delivered") {
+    updatePayload.deliveredAt = new Date();
+  }
+
+  await db.update(orders).set(updatePayload).where(eq(orders.id, id));
 
   const updated = await db.select().from(orders).where(eq(orders.id, id)).limit(1);
-  return NextResponse.json(updated[0]);
+  const targetOrder = updated[0];
+
+  if (targetOrder) {
+    // Send automated WhatsApp confirmation message to customer upon status update
+    void sendCustomerOrderWhatsAppSMS({
+      phone: targetOrder.phone,
+      customerName: targetOrder.customerName,
+      orderId: targetOrder.id,
+      totalAmount: targetOrder.total,
+      itemsCount: 1,
+    }).catch((err) => console.error("WhatsApp status update dispatch error:", err));
+  }
+
+  return NextResponse.json(targetOrder);
 }

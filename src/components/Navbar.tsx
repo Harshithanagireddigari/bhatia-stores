@@ -71,6 +71,14 @@ export default function Navbar() {
             Shop
           </Link>
 
+          <Link href="/complete-bathroom" className={linkClass}>
+            Complete Bathroom
+          </Link>
+
+          <Link href="/boq" className={linkClass}>
+            BOQ Quote
+          </Link>
+
           <Link
             href="/wishlist"
             aria-label="Wishlist"

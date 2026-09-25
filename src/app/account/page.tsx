@@ -21,13 +21,28 @@ import {
   User, 
   LogOut,
   ArrowRight,
-  Sparkles
+  Sparkles,
+  RotateCcw
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 type User = { name: string; email: string; phone?: string };
 type Order = { id: string; total: string; status: string; createdAt: string; razorpayPaymentId: string | null };
+type UserReturn = {
+  id: string;
+  orderId: string;
+  productId: string;
+  requestType: "return" | "exchange";
+  reason: string;
+  details: string | null;
+  status: "pending" | "approved" | "rejected" | "completed";
+  adminComment: string | null;
+  createdAt: string;
+  productName: string;
+  productImage: string;
+  productPrice: number;
+};
 
 export type SavedAddress = {
   id: string;
@@ -49,10 +64,18 @@ const statusStyles: Record<string, string> = {
   cancelled: "bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-300",
 };
 
+const returnStatusStyles: Record<string, string> = {
+  pending: "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300",
+  approved: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300",
+  rejected: "bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-300",
+  completed: "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300",
+};
+
 export default function AccountPage() {
   const [user, setUser] = useState<User | null | undefined>(undefined);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [activeTab, setActiveTab] = useState<"overview" | "orders" | "addresses" | "wishlist" | "settings">("overview");
+  const [userReturns, setUserReturns] = useState<UserReturn[]>([]);
+  const [activeTab, setActiveTab] = useState<"overview" | "orders" | "returns" | "addresses" | "wishlist" | "settings">("overview");
 
   // Address State
   const [addresses, setAddresses] = useState<SavedAddress[]>([]);
@@ -125,7 +148,7 @@ export default function AccountPage() {
     // Determine active tab from URL hash
     const handleHashChange = () => {
       const hash = window.location.hash.replace("#", "");
-      if (["overview", "orders", "addresses", "wishlist", "settings"].includes(hash)) {
+      if (["overview", "orders", "returns", "addresses", "wishlist", "settings"].includes(hash)) {
         setActiveTab(hash as any);
       }
     };
@@ -136,7 +159,8 @@ export default function AccountPage() {
     void Promise.all([
       fetch("/api/auth/me").then((r) => r.json()),
       fetch("/api/orders").then((r) => (r.ok ? r.json() : [])),
-    ]).then(([me, orderData]) => {
+      fetch("/api/returns").then((r) => (r.ok ? r.json() : [])),
+    ]).then(([me, orderData, returnData]) => {
       if (me.user) {
         setUser(me.user);
         setProfileForm({ name: me.user.name || "", phone: me.user.phone || "" });
@@ -156,6 +180,7 @@ export default function AccountPage() {
         setUser(null);
       }
       setOrders(Array.isArray(orderData) ? orderData : []);
+      setUserReturns(Array.isArray(returnData) ? returnData : []);
     });
 
     return () => window.removeEventListener("hashchange", handleHashChange);
@@ -178,7 +203,7 @@ export default function AccountPage() {
   }
 
   // Switch Tab Handler
-  const switchTab = (tab: "overview" | "orders" | "addresses" | "wishlist" | "settings") => {
+  const switchTab = (tab: "overview" | "orders" | "returns" | "addresses" | "wishlist" | "settings") => {
     if (tab === "orders") {
       window.location.href = "/orders";
       return;
@@ -429,6 +454,7 @@ export default function AccountPage() {
               {[
                 [UserRound, "Overview", "overview"],
                 [Package, "Orders", "orders"],
+                [RotateCcw, "Returns & Exchanges", "returns"],
                 [MapPin, "Addresses", "addresses"],
                 [Heart, "Wishlist", "wishlist"],
                 [Settings, "Account settings", "settings"],
@@ -491,7 +517,7 @@ export default function AccountPage() {
                 </div>
 
                 {/* Quick Action Cards Grid */}
-                <div className="grid gap-4 sm:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                   <button
                     onClick={() => switchTab("orders")}
                     className="text-left rounded-3xl border border-stone-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-[#b49663] dark:border-stone-800 dark:bg-stone-900 dark:hover:border-[#b49663]"
@@ -504,6 +530,21 @@ export default function AccountPage() {
                     </h3>
                     <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
                       {orders.length} order{orders.length === 1 ? "" : "s"} tracked
+                    </p>
+                  </button>
+
+                  <button
+                    onClick={() => switchTab("returns")}
+                    className="text-left rounded-3xl border border-stone-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-[#b49663] dark:border-stone-800 dark:bg-stone-900 dark:hover:border-[#b49663]"
+                  >
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-50 text-[#b49663] dark:bg-amber-950/40">
+                      <RotateCcw size={20} />
+                    </div>
+                    <h3 className="mt-4 font-bold text-stone-900 dark:text-white text-base">
+                      Returns & Exchanges
+                    </h3>
+                    <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
+                      {userReturns.length} request{userReturns.length === 1 ? "" : "s"}
                     </p>
                   </button>
 

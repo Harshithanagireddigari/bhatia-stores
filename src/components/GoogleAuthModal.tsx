@@ -56,14 +56,46 @@ export default function GoogleAuthModal({ isOpen, onClose, redirectUrl }: Google
     setStep("password");
   }
 
-  function handlePasswordNext(e: React.FormEvent) {
+  async function handlePasswordNext(e: React.FormEvent) {
     e.preventDefault();
     if (!googlePassword) {
       setErrorMsg("Please enter your password.");
       return;
     }
+    
+    setLoading(true);
     setErrorMsg(null);
-    setStep("confirm");
+
+    const emailToUse = isCustomAccount ? customEmail.trim().toLowerCase() : selectedAccount.email;
+    const nameToUse = isCustomAccount
+      ? customEmail.split("@")[0].charAt(0).toUpperCase() + customEmail.split("@")[0].slice(1)
+      : selectedAccount.name;
+
+    try {
+      const res = await fetch("/api/auth/google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: emailToUse,
+          password: googlePassword,
+          name: nameToUse,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Incorrect password.");
+      }
+
+      // Store response user for final redirect
+      setErrorMsg(null);
+      setStep("confirm");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Password verification failed.";
+      setErrorMsg(msg);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleFinalConfirm() {

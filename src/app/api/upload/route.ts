@@ -16,15 +16,26 @@ export async function POST(req: NextRequest) {
     const file = data.get("file") as File;
     const assetType = data.get("assetType");
 
-    if (!file || !file.type.startsWith("image/")) {
+    if (!file) {
+      return NextResponse.json({ error: "No file provided for upload" }, { status: 400 });
+    }
+
+    const isImage = file.type.startsWith("image/");
+    const isVideo = file.type.startsWith("video/");
+
+    if (!isImage && !isVideo) {
       return NextResponse.json(
-        { error: "Please upload a valid image file (JPG, PNG, WebP)" },
+        { error: "Please upload a valid image (JPG, PNG, WebP) or video file (MP4, WebM, MOV)" },
         { status: 400 }
       );
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      return NextResponse.json({ error: "Image must be smaller than 5MB" }, { status: 400 });
+    const maxBytes = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024;
+    if (file.size > maxBytes) {
+      return NextResponse.json(
+        { error: isVideo ? "Video file must be smaller than 50MB" : "Image file must be smaller than 10MB" },
+        { status: 400 }
+      );
     }
 
     const bytes = await file.arrayBuffer();
@@ -40,6 +51,8 @@ export async function POST(req: NextRequest) {
       const folder =
         assetType === "hero"
           ? "bhatia-hero"
+          : assetType === "auth"
+          ? "bhatia-auth"
           : assetType === "category"
           ? "bhatia-categories"
           : "bhatia-products";
@@ -50,14 +63,9 @@ export async function POST(req: NextRequest) {
             .upload_stream(
               {
                 folder,
-                resource_type: "image",
+                resource_type: "auto",
                 use_filename: false,
                 unique_filename: true,
-                allowed_formats: ["jpg", "jpeg", "png", "webp"],
-                transformation: [
-                  { quality: "auto", fetch_format: "auto" },
-                  { width: 1920, crop: "limit" },
-                ],
               },
               (error, res) => {
                 if (error) {
@@ -74,20 +82,21 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({
             imageUrl: result.secure_url,
             imagePublicId: result.public_id || null,
+            mediaType: isVideo ? "video" : "image",
           });
         }
       } catch (cloudErr) {
-        console.warn("Cloudinary upload failed, falling back to local/data storage:", cloudErr);
+        console.warn("Cloudinary upload failed, falling back to local storage:", cloudErr);
       }
     }
 
-    // Fallback: save to public/uploads/ or return data URL
+    // Fallback: save to public/uploads/
     try {
       const uploadDir = path.join(process.cwd(), "public", "uploads");
       if (!fs.existsSync(uploadDir)) {
         fs.mkdirSync(uploadDir, { recursive: true });
       }
-      const ext = file.name.split(".").pop() || "jpg";
+      const ext = file.name.split(".").pop() || (isVideo ? "mp4" : "jpg");
       const fileName = `${assetType || "upload"}-${uuidv4()}.${ext}`;
       const filePath = path.join(uploadDir, fileName);
 
@@ -97,6 +106,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         imageUrl,
         imagePublicId: null,
+        mediaType: isVideo ? "video" : "image",
       });
     } catch (fsErr) {
       console.warn("Filesystem write failed, using data URL fallback:", fsErr);
@@ -106,6 +116,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         imageUrl,
         imagePublicId: null,
+        mediaType: isVideo ? "video" : "image",
       });
     }
   } catch (error) {

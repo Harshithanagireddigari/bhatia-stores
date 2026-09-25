@@ -48,20 +48,29 @@ export default function Hero({ slides = [] }: { slides?: HeroSlide[] }) {
       
       {/* BACKGROUND LUXURY VIDEO / IMAGE CONTAINER */}
       <div className="absolute inset-0 z-0">
-        <video
-          ref={videoRef}
-          autoPlay
-          loop
-          muted
-          playsInline
-          poster="https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=1200&q=80"
-          className="h-full w-full object-cover scale-105 opacity-85 transition-opacity duration-1000"
-        >
-          <source
-            src="https://assets.mixkit.co/videos/preview/mixkit-modern-bathroom-interior-with-a-tub-41551-large.mp4"
-            type="video/mp4"
+        {active.imageUrl && !active.imageUrl.toLowerCase().endsWith(".mp4") && !active.imageUrl.toLowerCase().endsWith(".webm") && !active.imageUrl.includes("video/upload") && !active.imageUrl.includes("mixkit") ? (
+          <img
+            key={active.id}
+            src={active.imageUrl}
+            alt={active.heading}
+            className="h-full w-full object-cover scale-105 opacity-85 transition-opacity duration-1000"
           />
-        </video>
+        ) : (
+          <video
+            ref={videoRef}
+            key={active.id || active.imageUrl}
+            autoPlay
+            loop
+            muted
+            playsInline
+            poster="https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=1200&q=80"
+            className="h-full w-full object-cover scale-105 opacity-85 transition-opacity duration-1000"
+          >
+            <source
+              src={active.imageUrl || "https://assets.mixkit.co/videos/preview/mixkit-modern-bathroom-interior-with-a-tub-41551-large.mp4"}
+            />
+          </video>
+        )}
 
         {/* LUXURY GRADIENT OVERLAYS */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-black/30" />

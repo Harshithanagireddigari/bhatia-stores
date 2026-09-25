@@ -40,7 +40,7 @@ export async function PUT(
 
   const { id } = await params;
   try {
-    const { name, description, price, image, category, stock } = await req.json();
+    const { name, description, price, image, category, stock, suiteRoom, suiteStep, sortOrder, isFeatured } = await req.json();
     if (image !== undefined && !isValidProductImageUrl(image)) {
       return NextResponse.json({ error: "Please upload a valid product image." }, { status: 400 });
     }
@@ -51,6 +51,10 @@ export async function PUT(
     if (image !== undefined) updateData.image = image;
     if (category !== undefined) updateData.category = category;
     if (stock !== undefined) updateData.stock = stock;
+    if (suiteRoom !== undefined) updateData.suiteRoom = suiteRoom;
+    if (suiteStep !== undefined) updateData.suiteStep = suiteStep;
+    if (sortOrder !== undefined && Number.isInteger(Number(sortOrder))) updateData.sortOrder = Number(sortOrder);
+    if (isFeatured !== undefined) updateData.isFeatured = isFeatured ? 1 : 0;
 
     await db.update(products).set(updateData).where(eq(products.id, id));
 

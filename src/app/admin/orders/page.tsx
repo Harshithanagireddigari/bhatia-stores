@@ -5,6 +5,7 @@ import Header from "@/components/admin/Header";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { getWhatsAppUrl, formatOrderWhatsAppMessage } from "@/lib/whatsapp-sms";
 
 interface Order {
   id: string;
@@ -300,6 +301,29 @@ export default function AdminOrdersPage() {
                                 </button>
                               );
                             })}
+                          </div>
+
+                          <div className="mt-3">
+                            <a
+                              href={getWhatsAppUrl(
+                                order.phone,
+                                formatOrderWhatsAppMessage({
+                                  orderId: order.id,
+                                  customerName: order.customerName,
+                                  status: order.status,
+                                  totalAmount: order.total,
+                                  paymentMethod: order.razorpayPaymentId === "cash_on_delivery" ? "Cash on Delivery" : "Online Prepaid",
+                                  address: order.address,
+                                  city: order.city,
+                                  phone: order.phone,
+                                })
+                              )}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-sm"
+                            >
+                              <span>💬 Send WhatsApp Confirmation & Order Details</span>
+                            </a>
                           </div>
                         </div>
                       </div>

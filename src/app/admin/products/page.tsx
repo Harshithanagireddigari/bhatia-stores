@@ -14,6 +14,8 @@ interface Product {
   image: string;
   category: string;
   stock: number;
+  suiteRoom?: string | null;
+  suiteStep?: string | null;
 }
 
 type StoreCategory = { id: string; name: string; isVisible: number };
@@ -29,8 +31,10 @@ export default function AdminProductsPage() {
     description: "",
     price: "",
     image: "",
-    category: "Electronics",
+    category: "Sanitaryware",
     stock: "10",
+    suiteRoom: "",
+    suiteStep: "",
   });
   const [saving, setSaving] = useState(false);
 
@@ -62,7 +66,7 @@ export default function AdminProductsPage() {
   }
 
   function resetForm() {
-    setForm({ name: "", description: "", price: "", image: "", category: "Electronics", stock: "10" });
+    setForm({ name: "", description: "", price: "", image: "", category: "Sanitaryware", stock: "10", suiteRoom: "", suiteStep: "" });
     setEditing(null);
     setShowForm(false);
   }
@@ -76,6 +80,8 @@ export default function AdminProductsPage() {
       image: product.image,
       category: product.category,
       stock: product.stock.toString(),
+      suiteRoom: product.suiteRoom || "",
+      suiteStep: product.suiteStep || "",
     });
     setShowForm(true);
   }
@@ -306,6 +312,42 @@ export default function AdminProductsPage() {
                     onChange={(e) => setForm({ ...form, stock: e.target.value })}
                     className="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Suite Room Assignment (Suite Builder)</label>
+                  <select
+                    value={form.suiteRoom}
+                    onChange={(e) => setForm({ ...form, suiteRoom: e.target.value })}
+                    className="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                  >
+                    <option value="">None (Standard Product)</option>
+                    <option value="bathroom">Bathroom Suite</option>
+                    <option value="hall">Living Room & Hall Suite</option>
+                    <option value="kitchen">Kitchen Suite</option>
+                    <option value="outdoor">Outdoor & Terrace Suite</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Suite Step</label>
+                  <select
+                    value={form.suiteStep}
+                    onChange={(e) => setForm({ ...form, suiteStep: e.target.value })}
+                    className="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                  >
+                    <option value="">None</option>
+                    <option value="basin">1. Wash Basin</option>
+                    <option value="faucet">2. Basin Mixer / Faucet</option>
+                    <option value="shower">3. Overhead Rain Shower</option>
+                    <option value="toilet">4. Water Closet / Toilet</option>
+                    <option value="hall_floor">1. Hall Flooring Tiles</option>
+                    <option value="wall_accent">2. Feature Wall Cladding</option>
+                    <option value="door_hardware">3. Door Handles & Locks</option>
+                    <option value="sink">1. Kitchen Sink</option>
+                    <option value="kitchen_tap">2. Kitchen Tap</option>
+                    <option value="step_riser">1. Step & Riser Tiles</option>
+                  </select>
                 </div>
               </div>
               <button

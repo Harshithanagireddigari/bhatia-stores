@@ -8,6 +8,8 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { isRateLimited } from "@/lib/rate-limit";
 import { sendOrderNotifications, sendLowStockAlertEmail } from "@/lib/order-email";
 import { createShiprocketOrder, getShiprocketCredentials } from "@/lib/shiprocket";
+import { notifyAdmin } from "@/lib/notifications";
+import { sendCustomerOrderWhatsAppSMS } from "@/lib/whatsapp-sms";
 
 export async function GET() {
   const user = await getSessionUser();
@@ -215,6 +217,8 @@ export async function POST(req: Request) {
     });
 
     const created = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
+
+    // 1. Email notifications to customer & store owner
     void sendOrderNotifications({
       id: orderId,
       customerName,
@@ -226,6 +230,31 @@ export async function POST(req: Request) {
       phone,
       items: verifiedItems.map(({ product, quantity }) => ({ productName: product.name, quantity, price: product.price })),
     }).catch((error) => console.error("Order notification error:", error));
+
+    // 2. In-App Bell Notification for Admin Dashboard & Admin Email Alert
+    void notifyAdmin({
+      type: "order_placed",
+      title: `New Order #${orderId.slice(0, 8).toUpperCase()} Received`,
+      message: `${customerName} placed a new ${paymentMethod.toUpperCase()} order worth ₹${finalTotal.toFixed(2)} (${verifiedItems.length} items).`,
+      link: "/admin/orders",
+      details: {
+        orderId,
+        customerName,
+        customerEmail,
+        phone,
+        total: finalTotal,
+        paymentMethod,
+      },
+    }).catch((err) => console.error("Admin order notification error:", err));
+
+    // 3. Automated WhatsApp & SMS Confirmation Message to Customer
+    void sendCustomerOrderWhatsAppSMS({
+      phone,
+      customerName,
+      orderId,
+      totalAmount: finalTotal.toFixed(2),
+      itemsCount: verifiedItems.length,
+    }).catch((err) => console.error("WhatsApp/SMS customer dispatch error:", err));
 
     // Attempt automatic Shiprocket order creation if enabled
     void (async () => {

@@ -17,6 +17,49 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [showGoogleModal, setShowGoogleModal] = useState(false);
 
+  const [authMedia, setAuthMedia] = useState({
+    mediaUrl: "https://assets.mixkit.co/videos/preview/mixkit-modern-bathroom-interior-with-a-tub-41551-large.mp4",
+    mediaType: "video",
+    eyebrow: "BHATIA STORES",
+    heading: "Beautiful spaces begin with the",
+    accent: "right surface.",
+    description: "Discover premium tiles and sanitaryware for spaces that deserve a distinctive finish.",
+  });
+
+  useEffect(() => {
+    async function fetchAuthMedia() {
+      try {
+        const res = await fetch("/api/admin/settings?key=auth_media");
+        if (res.ok) {
+          const data = await res.json();
+          const stored = data.auth_media || data.value;
+          if (stored && stored.mediaUrl) {
+            const cleanUrl = stored.mediaUrl.toLowerCase();
+            const isVid =
+              stored.mediaType === "video" ||
+              cleanUrl.endsWith(".mp4") ||
+              cleanUrl.endsWith(".webm") ||
+              cleanUrl.endsWith(".mov") ||
+              cleanUrl.includes("video/upload") ||
+              cleanUrl.includes("mixkit");
+
+            setAuthMedia({
+              mediaUrl: stored.mediaUrl,
+              mediaType: isVid ? "video" : "image",
+              eyebrow: stored.eyebrow || "BHATIA STORES",
+              heading: stored.heading || "Beautiful spaces begin with the",
+              accent: stored.accent || "right surface.",
+              description: stored.description || "Discover premium tiles and sanitaryware for spaces that deserve a distinctive finish.",
+            });
+          }
+        }
+      } catch {
+        // fallback
+      }
+    }
+    void fetchAuthMedia();
+  }, []);
+
   async function loadCaptcha() {
     try {
       const res = await fetch("/api/auth/captcha", {
@@ -84,46 +127,47 @@ export default function LoginPage() {
   const redirectUrl = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("redirect") || undefined : undefined;
 
   return (
-    <main className="min-h-[calc(100vh-73px)] bg-[#f7f6f2] px-4 py-8 sm:px-6 lg:px-8 font-sans">
-      <div className="mx-auto grid max-w-5xl overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-[0_25px_80px_rgba(15,23,42,0.12)] lg:grid-cols-2">
+    <main className="min-h-[calc(100vh-73px)] bg-[#f7f6f2] dark:bg-[#12100e] px-4 py-8 sm:px-6 lg:px-8 font-sans">
+      <div className="mx-auto grid max-w-5xl overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-[0_25px_80px_rgba(15,23,42,0.12)] dark:border-stone-800 dark:bg-stone-900 lg:grid-cols-2">
 
-        {/* LEFT: BRAND PANEL WITH LUXURY VIDEO */}
-        <section className="relative hidden min-h-[680px] overflow-hidden lg:block">
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            poster="https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=1200&q=80"
-            className="absolute inset-0 h-full w-full object-cover scale-105"
-          >
-            <source
-              src="https://assets.mixkit.co/videos/preview/mixkit-modern-bathroom-interior-with-a-tub-41551-large.mp4"
-              type="video/mp4"
+        {/* LEFT: BRAND PANEL WITH DYNAMIC VIDEO OR PHOTO */}
+        <section className="relative hidden min-h-[680px] overflow-hidden lg:block bg-stone-900">
+          {authMedia.mediaType === "video" ? (
+            <video
+              key={authMedia.mediaUrl}
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="absolute inset-0 h-full w-full object-cover scale-105"
+            >
+              <source src={authMedia.mediaUrl} />
+            </video>
+          ) : (
+            <img
+              src={authMedia.mediaUrl}
+              alt="Bhatia Stores background"
+              className="absolute inset-0 h-full w-full object-cover scale-105"
             />
-          </video>
+          )}
 
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-black/10" />
 
           <div className="relative z-10 flex h-full flex-col justify-between p-10 text-white">
-
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#d7b45a]">
-                BHATIA STORES
+                {authMedia.eyebrow}
               </p>
 
               <h2 className="mt-6 max-w-md text-4xl font-semibold leading-[1.08]">
-                Beautiful spaces
-                <br />
-                begin with the
+                {authMedia.heading}
                 <span className="block text-[#d7b45a]">
-                  right surface.
+                  {authMedia.accent}
                 </span>
               </h2>
 
               <p className="mt-6 max-w-md text-sm leading-7 text-white/75">
-                Discover premium tiles and sanitaryware for spaces that
-                deserve a distinctive finish.
+                {authMedia.description}
               </p>
             </div>
 
@@ -139,19 +183,19 @@ export default function LoginPage() {
         </section>
 
         {/* RIGHT: LOGIN */}
-        <section className="flex items-center p-7 sm:p-10 lg:p-12">
+        <section className="flex items-center p-7 sm:p-10 lg:p-12 dark:bg-stone-900">
           <div className="mx-auto w-full max-w-md">
 
             <div className="mb-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[#b49663]">
+              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[#b49663] dark:text-[#c5a059]">
                 Welcome back
               </p>
 
-              <h1 className="mt-2 text-3xl font-bold tracking-tight text-gray-900">
+              <h1 className="mt-2 text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
                 Sign in to Bhatia Stores
               </h1>
 
-              <p className="mt-1 text-sm leading-6 text-gray-500">
+              <p className="mt-1 text-sm leading-6 text-gray-500 dark:text-gray-400">
                 Access your orders, wishlist and account details.
               </p>
             </div>
@@ -160,7 +204,7 @@ export default function LoginPage() {
 
               {/* Email */}
               <div>
-                <label className="block text-xs font-semibold text-gray-800">
+                <label className="block text-xs font-semibold text-gray-800 dark:text-stone-300">
                   Email
                 </label>
 
@@ -171,7 +215,7 @@ export default function LoginPage() {
                   required
                   autoComplete="email"
                   placeholder="you@example.com"
-                  className="mt-1.5 w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#b49663] focus:ring-4 focus:ring-[#b49663]/10"
+                  className="mt-1.5 w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#b49663] focus:ring-4 focus:ring-[#b49663]/10 dark:border-stone-800 dark:bg-stone-950 dark:text-white"
                 />
               </div>
 

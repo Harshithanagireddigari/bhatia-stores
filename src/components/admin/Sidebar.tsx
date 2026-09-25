@@ -14,13 +14,15 @@ import {
   Settings,
   Search,
   Bell,
-  User
+  User,
+  RotateCcw
 } from "lucide-react";
 
 const navigation = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { name: "Products", href: "/admin/products", icon: Package },
   { name: "Orders", href: "/admin/orders", icon: ShoppingCart },
+  { name: "Returns & Exchanges", href: "/admin/returns", icon: RotateCcw },
   { name: "Customers", href: "/admin/customers", icon: Users },
   { name: "Categories", href: "/admin/categories", icon: Tag },
   { name: "Launchpad", href: "/admin/launchpad", icon: LayoutDashboard },
