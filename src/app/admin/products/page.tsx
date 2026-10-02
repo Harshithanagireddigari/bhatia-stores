@@ -389,18 +389,30 @@ export default function AdminProductsPage() {
                       <tr key={product.id} className="border-b border-gray-100 dark:border-gray-800">
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                            {product.image ? (
-                              <img
-                                src={product.image}
-                                alt={product.name}
-                                className="h-10 w-10 rounded-lg object-cover"
-                              />
-                            ) : (
-                              <span className="text-2xl">🛒</span>
-                            )}
-                            <span className="font-medium text-gray-900 dark:text-white">
+                            <Link
+                              href={`/product/${product.id}`}
+                              target="_blank"
+                              title="Click to view product details"
+                              className="relative group shrink-0"
+                            >
+                              {product.image ? (
+                                <img
+                                  src={product.image}
+                                  alt={product.name}
+                                  className="h-11 w-11 rounded-lg object-cover border border-stone-200 dark:border-stone-700 transition duration-200 group-hover:scale-105 group-hover:border-[#b49663]"
+                                />
+                              ) : (
+                                <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-stone-100 dark:bg-stone-800 text-lg">🛒</span>
+                              )}
+                            </Link>
+                            <Link
+                              href={`/product/${product.id}`}
+                              target="_blank"
+                              title="Click to view product details"
+                              className="font-medium text-gray-900 dark:text-white hover:text-[#b49663] dark:hover:text-[#b49663] transition hover:underline"
+                            >
                               {product.name}
-                            </span>
+                            </Link>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-gray-600 dark:text-gray-400">{product.category}</td>

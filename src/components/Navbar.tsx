@@ -72,7 +72,7 @@ export default function Navbar() {
           </Link>
 
           <Link href="/complete-bathroom" className={linkClass}>
-            Complete Bathroom
+            Suite Completion
           </Link>
 
           <Link href="/boq" className={linkClass}>
@@ -123,17 +123,6 @@ export default function Navbar() {
               {theme === "dark" ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} />}
             </button>
           )}
-
-          <button
-            onClick={async () => {
-              await fetch("/api/auth/logout", { method: "POST" });
-              router.push("/login");
-              router.refresh();
-            }}
-            className="text-xs font-semibold text-red-600 hover:text-red-700 dark:text-red-400 transition"
-          >
-            Logout
-          </button>
         </div>
 
         {/* MOBILE CONTROLS */}
@@ -239,19 +228,6 @@ export default function Navbar() {
               <User size={17} className="text-[#b49663]" />
               <span>My Account</span>
             </Link>
-
-            <button
-              onClick={async () => {
-                setMobileOpen(false);
-                await fetch("/api/auth/logout", { method: "POST" });
-                router.push("/login");
-                router.refresh();
-              }}
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 text-left mt-2 border-t border-stone-100 dark:border-stone-800 pt-3"
-            >
-              <LogOut size={17} />
-              <span>Sign Out</span>
-            </button>
           </div>
         </div>
       )}

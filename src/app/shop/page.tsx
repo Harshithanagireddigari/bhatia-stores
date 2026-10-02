@@ -185,137 +185,53 @@ function ShopContent() {
         </div>
       </div>
 
-      {/* Main Layout Grid (Filter Sidebar + Products) */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        
-        {/* Filter Sidebar */}
-        <aside className="hidden lg:block space-y-6 bg-white dark:bg-stone-900 p-6 rounded-3xl border border-stone-200 dark:border-stone-800 shadow-sm h-fit">
-          <div className="flex items-center justify-between border-b border-stone-100 dark:border-stone-800 pb-3">
-            <h2 className="font-bold text-sm text-stone-900 dark:text-white flex items-center gap-2">
-              <Filter className="h-4 w-4 text-[#b49663]" />
-              Filter Products
-            </h2>
-            <button
-              onClick={resetAllFilters}
-              className="text-[11px] font-bold text-[#b49663] hover:underline"
-            >
-              Reset All
-            </button>
-          </div>
-
-          {/* Category Filter */}
-          <div>
-            <h3 className="text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-2">
-              Categories
-            </h3>
-            <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
-              {categoryFilters.map((cat) => (
-                <button
-                  key={cat.name}
-                  onClick={() => setCategory(cat.name === "All" ? "" : cat.name)}
-                  className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center justify-between ${
-                    (cat.name === "All" && !category) || category === cat.name
-                      ? "bg-[#b49663] text-white font-bold"
-                      : "text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800"
+      {/* Top Filter & Category Control Panel */}
+      <div className="mb-8 space-y-4">
+        {/* Horizontal Category Scroll Pills */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+          {categoryFilters.map((cat) => {
+            const isActive = (cat.name === "All" && !category) || category === cat.name;
+            return (
+              <button
+                key={cat.name}
+                onClick={() => setCategory(cat.name === "All" ? "" : cat.name)}
+                className={`shrink-0 flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all shadow-sm ${
+                  isActive
+                    ? "bg-[#b49663] text-white shadow-md scale-102"
+                    : "bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-800 hover:border-[#b49663]"
+                }`}
+              >
+                <span>{cat.name}</span>
+                <span
+                  className={`px-1.5 py-0.5 rounded-full text-[10px] ${
+                    isActive
+                      ? "bg-white/20 text-white"
+                      : "bg-stone-100 dark:bg-stone-800 text-stone-500"
                   }`}
                 >
-                  <span>{cat.name}</span>
-                  <span className="opacity-70 text-[10px]">{cat.productCount}</span>
-                </button>
-              ))}
-            </div>
-          </div>
+                  {cat.productCount}
+                </span>
+              </button>
+            );
+          })}
+        </div>
 
-          {/* Finish / Color Filter */}
-          <div>
-            <h3 className="text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-2">
-              Finish & Coating
-            </h3>
-            <select
-              value={selectedFinish}
-              onChange={(e) => setSelectedFinish(e.target.value)}
-              className="w-full p-2 text-xs border border-stone-300 dark:border-stone-700 rounded-xl bg-stone-50 dark:bg-stone-950 text-stone-900 dark:text-white"
-            >
-              <option value="All">All Finishes</option>
-              <option value="Chrome">Chrome Polish</option>
-              <option value="Matt Black">Matt Black</option>
-              <option value="Brushed Gold">Brushed Gold</option>
-              <option value="Rose Gold">Rose Gold</option>
-              <option value="Antique Brass">Antique Brass</option>
-            </select>
-          </div>
-
-          {/* Mount Type */}
-          <div>
-            <h3 className="text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-2">
-              Mounting Style
-            </h3>
-            <select
-              value={selectedMount}
-              onChange={(e) => setSelectedMount(e.target.value)}
-              className="w-full p-2 text-xs border border-stone-300 dark:border-stone-700 rounded-xl bg-stone-50 dark:bg-stone-950 text-stone-900 dark:text-white"
-            >
-              <option value="All">All Mount Types</option>
-              <option value="Wall Mount">Wall Mount</option>
-              <option value="Table Top">Table Top / Countertop</option>
-              <option value="Floor Mounted">Floor Mounted</option>
-              <option value="Concealed">Concealed / In-Wall</option>
-            </select>
-          </div>
-
-          {/* Feature Toggles */}
-          <div>
-            <h3 className="text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-2">
-              Special Technology
-            </h3>
-            <div className="space-y-2 text-xs">
-              <label className="flex items-center gap-2 cursor-pointer text-stone-700 dark:text-stone-300">
-                <input
-                  type="checkbox"
-                  checked={waterSavingOnly}
-                  onChange={(e) => setWaterSavingOnly(e.target.checked)}
-                  className="rounded text-[#b49663] focus:ring-[#b49663]"
-                />
-                <span className="flex items-center gap-1">💧 Water Saving Aerator</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer text-stone-700 dark:text-stone-300">
-                <input
-                  type="checkbox"
-                  checked={antiRustOnly}
-                  onChange={(e) => setAntiRustOnly(e.target.checked)}
-                  className="rounded text-[#b49663] focus:ring-[#b49663]"
-                />
-                <span className="flex items-center gap-1">🛡️ Anti-Rust Brass</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer text-stone-700 dark:text-stone-300">
-                <input
-                  type="checkbox"
-                  checked={sensorOnly}
-                  onChange={(e) => setSensorOnly(e.target.checked)}
-                  className="rounded text-[#b49663] focus:ring-[#b49663]"
-                />
-                <span className="flex items-center gap-1">✨ Touchless Sensor</span>
-              </label>
-            </div>
-          </div>
-        </aside>
-
-        {/* Product Catalog Content */}
-        <main className="lg:col-span-3 space-y-6">
-          {/* Top Search Bar */}
-          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-            <form onSubmit={submitSearch} className="relative w-full sm:max-w-md">
+        {/* Top Horizontal Filter Console */}
+        <div className="bg-white dark:bg-stone-900 p-4 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-sm space-y-3">
+          <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+            {/* Search Input */}
+            <form onSubmit={submitSearch} className="relative flex-1">
               <Search
                 aria-hidden
-                size={18}
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                size={16}
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stone-400"
               />
               <input
                 key={search}
                 name="search"
                 defaultValue={search}
-                placeholder="Search taps, showers, basins, finishes..."
-                className="w-full rounded-2xl border border-stone-200 bg-white py-3 pl-10 pr-10 text-xs outline-none transition focus:border-[#b49663] dark:border-stone-800 dark:bg-stone-900"
+                placeholder="Search taps, showers, tiles, finishes..."
+                className="w-full rounded-xl border border-stone-200 bg-stone-50 py-2 pl-9 pr-9 text-xs outline-none transition focus:border-[#b49663] focus:bg-white dark:border-stone-700 dark:bg-stone-950 dark:text-white"
               />
               {search && (
                 <button
@@ -323,75 +239,140 @@ function ShopContent() {
                   onClick={() =>
                     router.replace(category ? `/shop?category=${encodeURIComponent(category)}` : "/shop")
                   }
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700"
                 >
-                  <X size={16} />
+                  <X size={14} />
                 </button>
               )}
             </form>
 
-            <button
-              onClick={() => setShowFiltersMobile(!showFiltersMobile)}
-              className="lg:hidden flex items-center gap-2 px-4 py-2.5 rounded-full bg-stone-100 dark:bg-stone-800 text-xs font-bold text-stone-900 dark:text-white"
-            >
-              <Filter size={15} />
-              <span>Filters</span>
-            </button>
+            {/* Dropdown Filters */}
+            <div className="flex flex-wrap items-center gap-2">
+              <select
+                value={selectedFinish}
+                onChange={(e) => setSelectedFinish(e.target.value)}
+                className="px-3 py-2 text-xs font-semibold border border-stone-200 dark:border-stone-700 rounded-xl bg-stone-50 dark:bg-stone-950 text-stone-900 dark:text-white outline-none focus:border-[#b49663]"
+              >
+                <option value="All">All Finishes</option>
+                <option value="Chrome">Chrome Polish</option>
+                <option value="Matt Black">Matt Black</option>
+                <option value="Brushed Gold">Brushed Gold</option>
+                <option value="Rose Gold">Rose Gold</option>
+                <option value="Antique Brass">Antique Brass</option>
+              </select>
+
+              <select
+                value={selectedMount}
+                onChange={(e) => setSelectedMount(e.target.value)}
+                className="px-3 py-2 text-xs font-semibold border border-stone-200 dark:border-stone-700 rounded-xl bg-stone-50 dark:bg-stone-950 text-stone-900 dark:text-white outline-none focus:border-[#b49663]"
+              >
+                <option value="All">All Mount Types</option>
+                <option value="Wall Mount">Wall Mount</option>
+                <option value="Table Top">Table Top / Countertop</option>
+                <option value="Floor Mounted">Floor Mounted</option>
+                <option value="Concealed">Concealed / In-Wall</option>
+              </select>
+
+              {(category || selectedFinish !== "All" || selectedMount !== "All" || waterSavingOnly || antiRustOnly || sensorOnly || search) && (
+                <button
+                  onClick={resetAllFilters}
+                  className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 transition dark:bg-red-950/40 dark:text-red-300"
+                >
+                  <RotateCcw size={13} />
+                  <span>Reset</span>
+                </button>
+              )}
+            </div>
           </div>
 
-          {/* Products Grid */}
-          {loading ? (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="animate-pulse rounded-2xl border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900"
-                >
-                  <div className="h-48 rounded-xl bg-stone-200 dark:bg-stone-800" />
-                  <div className="mt-4 h-4 w-3/4 rounded bg-stone-200 dark:bg-stone-800" />
-                  <div className="mt-2 h-4 w-1/2 rounded bg-stone-200 dark:bg-stone-800" />
-                </div>
-              ))}
-            </div>
-          ) : products.length === 0 ? (
-            <div className="mt-16 text-center py-12 bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800">
-              <p className="text-sm font-semibold text-stone-500 dark:text-stone-400">
-                No matching products found. Try changing your filters.
-              </p>
-              <button
-                onClick={resetAllFilters}
-                className="mt-4 px-4 py-2 rounded-full bg-[#b49663] text-white text-xs font-bold"
-              >
-                Reset All Filters
-              </button>
-            </div>
-          ) : (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {products.map((product) => {
-                const isCompared = compareList.some((p) => p.id === product.id);
-                return (
-                  <div key={product.id} className="relative group">
-                    <ProductCard product={product} />
-
-                    {/* Compare Button Toggle */}
-                    <button
-                      onClick={() => toggleCompareProduct(product)}
-                      className={`mt-2 w-full flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-[11px] font-bold border transition ${
-                        isCompared
-                          ? "bg-[#b49663] text-white border-[#b49663]"
-                          : "bg-stone-50 dark:bg-stone-950 text-stone-600 dark:text-stone-400 border-stone-200 dark:border-stone-800 hover:border-[#b49663]"
-                      }`}
-                    >
-                      <Scale size={13} />
-                      <span>{isCompared ? "Added to Compare ✓" : "+ Compare"}</span>
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </main>
+          {/* Quick Feature Badges Row */}
+          <div className="flex flex-wrap items-center gap-4 pt-2 border-t border-stone-100 dark:border-stone-800 text-xs">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-stone-400">Features:</span>
+            <label className="flex items-center gap-1.5 cursor-pointer text-stone-700 dark:text-stone-300 hover:text-[#b49663]">
+              <input
+                type="checkbox"
+                checked={waterSavingOnly}
+                onChange={(e) => setWaterSavingOnly(e.target.checked)}
+                className="rounded text-[#b49663] focus:ring-[#b49663]"
+              />
+              <span>💧 Water Saving</span>
+            </label>
+            <label className="flex items-center gap-1.5 cursor-pointer text-stone-700 dark:text-stone-300 hover:text-[#b49663]">
+              <input
+                type="checkbox"
+                checked={antiRustOnly}
+                onChange={(e) => setAntiRustOnly(e.target.checked)}
+                className="rounded text-[#b49663] focus:ring-[#b49663]"
+              />
+              <span>🛡️ Anti-Rust</span>
+            </label>
+            <label className="flex items-center gap-1.5 cursor-pointer text-stone-700 dark:text-stone-300 hover:text-[#b49663]">
+              <input
+                type="checkbox"
+                checked={sensorOnly}
+                onChange={(e) => setSensorOnly(e.target.checked)}
+                className="rounded text-[#b49663] focus:ring-[#b49663]"
+              />
+              <span>✨ Touchless Sensor</span>
+            </label>
+          </div>
+        </div>
       </div>
+
+      {/* Main Full-Width Product Catalog */}
+      <main className="space-y-6">
+        {/* Products Grid */}
+        {loading ? (
+          <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div
+                key={i}
+                className="animate-pulse rounded-2xl border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900"
+              >
+                <div className="h-48 rounded-xl bg-stone-200 dark:bg-stone-800" />
+                <div className="mt-4 h-4 w-3/4 rounded bg-stone-200 dark:bg-stone-800" />
+                <div className="mt-2 h-4 w-1/2 rounded bg-stone-200 dark:bg-stone-800" />
+              </div>
+            ))}
+          </div>
+        ) : products.length === 0 ? (
+          <div className="mt-12 text-center py-12 bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800">
+            <p className="text-sm font-semibold text-stone-500 dark:text-stone-400">
+              No matching products found. Try changing your filters.
+            </p>
+            <button
+              onClick={resetAllFilters}
+              className="mt-4 px-4 py-2 rounded-full bg-[#b49663] text-white text-xs font-bold"
+            >
+              Reset All Filters
+            </button>
+          </div>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {products.map((product) => {
+              const isCompared = compareList.some((p) => p.id === product.id);
+              return (
+                <div key={product.id} className="relative group flex flex-col justify-between">
+                  <ProductCard product={product} />
+
+                  {/* Compare Button Toggle */}
+                  <button
+                    onClick={() => toggleCompareProduct(product)}
+                    className={`mt-2 w-full flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-[11px] font-bold border transition ${
+                      isCompared
+                        ? "bg-[#b49663] text-white border-[#b49663]"
+                        : "bg-stone-50 dark:bg-stone-950 text-stone-600 dark:text-stone-400 border-stone-200 dark:border-stone-800 hover:border-[#b49663]"
+                    }`}
+                  >
+                    <Scale size={13} />
+                    <span>{isCompared ? "Added to Compare ✓" : "+ Compare"}</span>
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </main>
 
       {/* Compare Modal Drawer */}
       {showCompareModal && (

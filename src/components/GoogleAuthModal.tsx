@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { X, Lock, Eye, EyeOff, Loader2, ArrowLeft, User, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { X, Lock, Eye, EyeOff, Loader2, ArrowLeft, User, ShieldCheck, CheckCircle2, KeyRound, Mail } from "lucide-react";
 
 interface GoogleAccount {
   name: string;
@@ -12,9 +12,8 @@ interface GoogleAccount {
 }
 
 const mockGoogleAccounts: GoogleAccount[] = [
-  { name: "Harshitha Nagireddy", email: "harshitha.n@gmail.com", avatar: "H" },
-  { name: "Darrajni In", email: "darrajni.in@gmail.com", avatar: "D" },
-  { name: "Bhatia Customer", email: "bhatia.customer@gmail.com", avatar: "B" },
+  { name: "Harshitha N", email: "harshitha@gmail.com", avatar: "H" },
+  { name: "Harshitha N", email: "harshitha@sharda.ac.in", avatar: "H" },
 ];
 
 interface GoogleAuthModalProps {
@@ -26,14 +25,16 @@ interface GoogleAuthModalProps {
 export default function GoogleAuthModal({ isOpen, onClose, redirectUrl }: GoogleAuthModalProps) {
   const router = useRouter();
   
-  // Steps: "select_account" -> "password" -> "confirm"
-  const [step, setStep] = useState<"select_account" | "password" | "confirm">("select_account");
+  // Steps: "select_account" -> "password" -> "otp" -> "confirm"
+  const [step, setStep] = useState<"select_account" | "password" | "otp" | "confirm">("select_account");
   const [selectedAccount, setSelectedAccount] = useState<GoogleAccount>(mockGoogleAccounts[0]);
   const [customEmail, setCustomEmail] = useState("");
   const [isCustomAccount, setIsCustomAccount] = useState(false);
   const [googlePassword, setGooglePassword] = useState("");
+  const [otpCode, setOtpCode] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [sendingOtp, setSendingOtp] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   if (!isOpen) return null;
@@ -44,6 +45,7 @@ export default function GoogleAuthModal({ isOpen, onClose, redirectUrl }: Google
     setCustomEmail("");
     setIsCustomAccount(false);
     setGooglePassword("");
+    setOtpCode("");
     setShowPassword(false);
     setErrorMsg(null);
     onClose();
@@ -56,6 +58,12 @@ export default function GoogleAuthModal({ isOpen, onClose, redirectUrl }: Google
     setStep("password");
   }
 
+  const getTargetEmail = () => (isCustomAccount ? customEmail.trim().toLowerCase() : selectedAccount.email);
+  const getTargetName = () =>
+    isCustomAccount
+      ? customEmail.split("@")[0].charAt(0).toUpperCase() + customEmail.split("@")[0].slice(1)
+      : selectedAccount.name;
+
   async function handlePasswordNext(e: React.FormEvent) {
     e.preventDefault();
     if (!googlePassword) {
@@ -66,10 +74,8 @@ export default function GoogleAuthModal({ isOpen, onClose, redirectUrl }: Google
     setLoading(true);
     setErrorMsg(null);
 
-    const emailToUse = isCustomAccount ? customEmail.trim().toLowerCase() : selectedAccount.email;
-    const nameToUse = isCustomAccount
-      ? customEmail.split("@")[0].charAt(0).toUpperCase() + customEmail.split("@")[0].slice(1)
-      : selectedAccount.name;
+    const emailToUse = getTargetEmail();
+    const nameToUse = getTargetName();
 
     try {
       const res = await fetch("/api/auth/google", {
@@ -87,7 +93,6 @@ export default function GoogleAuthModal({ isOpen, onClose, redirectUrl }: Google
         throw new Error(data.error || "Incorrect password.");
       }
 
-      // Store response user for final redirect
       setErrorMsg(null);
       setStep("confirm");
     } catch (err) {
@@ -98,14 +103,92 @@ export default function GoogleAuthModal({ isOpen, onClose, redirectUrl }: Google
     }
   }
 
+  async function handleSendOtp() {
+    const emailToUse = getTargetEmail();
+    if (!emailToUse) {
+      setErrorMsg("Please enter a valid Google email address.");
+      return;
+    }
+
+    setSendingOtp(true);
+    setErrorMsg(null);
+
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: emailToUse }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to send OTP email");
+      }
+
+      toast.success(`6-digit OTP sent to ${emailToUse}! Please check your inbox.`);
+      setStep("otp");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to send OTP email.";
+      setErrorMsg(msg);
+      toast.error(msg);
+    } finally {
+      setSendingOtp(false);
+    }
+  }
+
+  async function handleVerifyOtp(e: React.FormEvent) {
+    e.preventDefault();
+    if (!otpCode || otpCode.trim().length < 6) {
+      setErrorMsg("Please enter the complete 6-digit OTP code.");
+      return;
+    }
+
+    setLoading(true);
+    setErrorMsg(null);
+
+    const emailToUse = getTargetEmail();
+
+    try {
+      const res = await fetch("/api/auth/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: emailToUse,
+          otp: otpCode.trim(),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Invalid OTP code.");
+      }
+
+      toast.success(`OTP verified successfully! Welcome ${data.user.name}`);
+      handleClose();
+
+      if (data.user.role === "admin") {
+        router.push("/admin");
+      } else if (redirectUrl) {
+        router.push(redirectUrl);
+      } else {
+        router.push("/shop");
+      }
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "OTP verification failed.";
+      setErrorMsg(msg);
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function handleFinalConfirm() {
     setLoading(true);
     setErrorMsg(null);
 
-    const emailToUse = isCustomAccount ? customEmail.trim().toLowerCase() : selectedAccount.email;
-    const nameToUse = isCustomAccount
-      ? customEmail.split("@")[0].charAt(0).toUpperCase() + customEmail.split("@")[0].slice(1)
-      : selectedAccount.name;
+    const emailToUse = getTargetEmail();
+    const nameToUse = getTargetName();
 
     try {
       const res = await fetch("/api/auth/google", {
@@ -156,7 +239,7 @@ export default function GoogleAuthModal({ isOpen, onClose, redirectUrl }: Google
           <X size={18} />
         </button>
 
-        {/* STEP 1: SELECT ACCOUNT WITHOUT TYPING EMAIL */}
+        {/* STEP 1: SELECT ACCOUNT */}
         {step === "select_account" && (
           <div>
             <div className="text-center mb-6">
@@ -193,7 +276,6 @@ export default function GoogleAuthModal({ isOpen, onClose, redirectUrl }: Google
                 </button>
               ))}
 
-              {/* Use another account option */}
               <button
                 onClick={() => {
                   setIsCustomAccount(true);
@@ -208,7 +290,7 @@ export default function GoogleAuthModal({ isOpen, onClose, redirectUrl }: Google
           </div>
         )}
 
-        {/* STEP 2: ENTER PASSWORD */}
+        {/* STEP 2: ENTER PASSWORD WITH FORGOT PASSWORD OPTION */}
         {step === "password" && (
           <div>
             <button
@@ -251,9 +333,21 @@ export default function GoogleAuthModal({ isOpen, onClose, redirectUrl }: Google
               )}
 
               <div>
-                <label className="block font-bold text-stone-700 dark:text-stone-300 mb-1">
-                  Enter Password *
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="font-bold text-stone-700 dark:text-stone-300">
+                    Enter Password *
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleSendOtp}
+                    disabled={sendingOtp}
+                    className="text-[11px] font-bold text-[#b49663] hover:underline dark:text-[#c5a059] flex items-center gap-1 disabled:opacity-50"
+                  >
+                    {sendingOtp ? <Loader2 className="h-3 w-3 animate-spin" /> : <KeyRound size={12} />}
+                    <span>Forgot password? Log in with OTP</span>
+                  </button>
+                </div>
+
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
@@ -277,15 +371,81 @@ export default function GoogleAuthModal({ isOpen, onClose, redirectUrl }: Google
 
               <button
                 type="submit"
-                className="w-full rounded-2xl bg-[#c5a059] py-3.5 font-bold text-stone-900 shadow hover:bg-[#b49663] transition text-xs"
+                disabled={loading}
+                className="w-full rounded-2xl bg-[#c5a059] py-3.5 font-bold text-stone-900 shadow hover:bg-[#b49663] transition text-xs flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                Verify & Next
+                {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                <span>Verify & Next</span>
               </button>
             </form>
           </div>
         )}
 
-        {/* STEP 3: CONTINUE AS [NAME] CONFIRMATION */}
+        {/* STEP 3: OTP VERIFICATION SCREEN */}
+        {step === "otp" && (
+          <div>
+            <button
+              onClick={() => setStep("password")}
+              className="flex items-center gap-1.5 text-xs font-bold text-[#b49663] dark:text-[#c5a059] mb-4 hover:underline"
+            >
+              <ArrowLeft size={16} />
+              <span>Back to password</span>
+            </button>
+
+            <div className="text-center mb-5">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-[#b49663] dark:bg-amber-950/40 mb-2">
+                <Mail size={24} />
+              </div>
+              <h2 className="font-serif text-2xl font-bold text-stone-900 dark:text-white">
+                Enter Email OTP
+              </h2>
+              <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
+                We've sent a 6-digit one-time code to <strong className="text-stone-900 dark:text-white">{getTargetEmail()}</strong>
+              </p>
+            </div>
+
+            <form onSubmit={handleVerifyOtp} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-bold text-stone-700 dark:text-stone-300 mb-1">
+                  6-Digit OTP Code *
+                </label>
+                <input
+                  type="text"
+                  required
+                  maxLength={6}
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value.replace(/[^0-9]/g, ""))}
+                  placeholder="e.g. 749201"
+                  className="w-full text-center font-mono tracking-[0.5em] text-lg font-bold rounded-2xl border border-stone-300 bg-white p-3.5 text-stone-900 outline-none focus:border-[#b49663] dark:border-stone-700 dark:bg-stone-900 dark:text-white"
+                />
+              </div>
+
+              {errorMsg && <p className="text-xs font-bold text-red-600">{errorMsg}</p>}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-2xl bg-[#c5a059] py-3.5 font-bold text-stone-900 shadow hover:bg-[#b49663] transition text-xs flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                <span>Verify OTP & Log In</span>
+              </button>
+
+              <div className="text-center pt-2">
+                <button
+                  type="button"
+                  onClick={handleSendOtp}
+                  disabled={sendingOtp}
+                  className="text-xs font-bold text-[#b49663] hover:underline dark:text-[#c5a059]"
+                >
+                  {sendingOtp ? "Resending..." : "Didn't receive code? Resend OTP"}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* STEP 4: CONTINUE CONFIRMATION */}
         {step === "confirm" && (
           <div className="text-center animate-fade-in">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 mb-4">
@@ -296,13 +456,12 @@ export default function GoogleAuthModal({ isOpen, onClose, redirectUrl }: Google
               Identity Verified
             </h2>
             <p className="mt-1 text-xs text-stone-600 dark:text-stone-300">
-              Ready to log in as <strong className="text-stone-900 dark:text-white">{isCustomAccount ? customEmail : selectedAccount.name}</strong>.
+              Ready to log in as <strong className="text-stone-900 dark:text-white">{getTargetEmail()}</strong>.
             </p>
 
             {errorMsg && <p className="mt-3 text-xs font-bold text-red-600">{errorMsg}</p>}
 
             <div className="mt-6 space-y-3">
-              {/* GOLD CONTINUE AS BUTTON */}
               <button
                 onClick={handleFinalConfirm}
                 disabled={loading}
@@ -314,7 +473,7 @@ export default function GoogleAuthModal({ isOpen, onClose, redirectUrl }: Google
                     <span>Signing In...</span>
                   </>
                 ) : (
-                  <span>Continue as {isCustomAccount ? customEmail.split("@")[0] : selectedAccount.name}</span>
+                  <span>Continue as {getTargetName()}</span>
                 )}
               </button>
 

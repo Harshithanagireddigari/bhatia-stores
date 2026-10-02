@@ -4,6 +4,8 @@ import { ArrowRight, Headphones, ShieldCheck, Tag, Truck } from "lucide-react";
 import { db } from "@/db";
 import { categories as categoriesTable, heroSlides, products } from "@/db/schema";
 import Hero from "@/components/Hero";
+import OffersBannerSection from "@/components/OffersBannerSection";
+import AnimatedCategorySection from "@/components/AnimatedCategorySection";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +27,17 @@ export default async function HomePage() {
 
   const productImages = latestProducts.map((product) => product.image).filter((img): img is string => typeof img === "string" && img.trim().length > 0);
 
+  const fallbackCategoryImages: Record<string, string> = {
+    "floor-tiles": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=800&auto=format&fit=crop",
+    "wall-tiles": "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&w=800&auto=format&fit=crop",
+    "bathroom-tiles": "https://images.unsplash.com/photo-1620626011761-996317b8d101?q=80&w=800&auto=format&fit=crop",
+    "sanitaryware": "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&w=800&auto=format&fit=crop",
+    "faucets-taps": "https://images.unsplash.com/photo-1585758925574-d4bfa55eb5db?q=80&w=800&auto=format&fit=crop",
+    "wash-basins": "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&w=800&auto=format&fit=crop",
+    "toilets-wc": "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&w=800&auto=format&fit=crop",
+    "bathroom-accessories": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=800&auto=format&fit=crop",
+  };
+
   // Use database categories if defined, otherwise fallback to defaults
   const displayCategories = dbCategories.length > 0
     ? dbCategories.map((cat, idx) => ({
@@ -32,69 +45,25 @@ export default async function HomePage() {
         name: cat.name,
         subtitle: cat.description || `Explore ${cat.name}`,
         slug: cat.slug,
-        image: cat.image || productImages[idx % productImages.length] || "",
+        image: cat.image || fallbackCategoryImages[cat.slug] || productImages[idx % productImages.length] || "",
       }))
     : defaultCategories.map((def, idx) => ({
         id: def.slug,
         name: def.name,
         subtitle: def.subtitle,
         slug: def.slug,
-        image: productImages[idx % productImages.length] || "",
+        image: fallbackCategoryImages[def.slug] || productImages[idx % productImages.length] || "",
       }));
 
   return (
     <main className="overflow-hidden bg-[#fbf9f5] text-[#252322] font-sans">
       <Hero slides={activeHeroSlides} />
 
-      {/* Category Launchpad Section (Matches design reference) */}
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 md:py-24">
-        <div className="text-center">
-          <p className="text-xs font-bold uppercase tracking-[.25em] text-[#a08b68]">Shop by category</p>
-          <h2 className="mt-2 font-serif text-3xl font-medium tracking-tight text-[#2c241d] sm:text-4xl md:text-5xl">
-            Explore Our Collections
-          </h2>
-          <div className="mx-auto mt-3 h-0.5 w-12 bg-[#b49663]" />
-        </div>
+      {/* Motion-Powered Categories Section Right Below Hero */}
+      <AnimatedCategorySection categories={displayCategories} />
 
-        {/* 6 Grid Launchpad Cards */}
-        <div className="mt-12 grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
-          {displayCategories.map((cat) => (
-            <Link
-              key={cat.id}
-              href={`/shop?category=${encodeURIComponent(cat.name)}`}
-              className="group flex flex-col justify-between rounded-2xl border border-stone-200/80 bg-white p-3 shadow-sm transition hover:-translate-y-1 hover:shadow-md dark:border-stone-800 dark:bg-stone-900"
-            >
-              <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-stone-100 dark:bg-stone-800">
-                {cat.image ? (
-                  <img
-                    src={cat.image}
-                    alt={cat.name}
-                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-stone-200 text-stone-400 dark:bg-stone-800">
-                    <span className="font-serif text-lg text-stone-500">{cat.name.charAt(0)}</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="mt-3 flex items-center justify-between gap-2">
-                <div>
-                  <h3 className="font-serif text-sm font-bold text-[#2c241d] group-hover:text-[#b49663] dark:text-white transition">
-                    {cat.name}
-                  </h3>
-                  <p className="mt-0.5 text-[11px] text-stone-500 dark:text-stone-400 line-clamp-1">
-                    {cat.subtitle}
-                  </p>
-                </div>
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-stone-200 text-stone-500 transition group-hover:border-[#b49663] group-hover:bg-[#b49663] group-hover:text-white dark:border-stone-700">
-                  <ArrowRight size={12} />
-                </span>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
+      {/* Offers Section */}
+      <OffersBannerSection />
 
       {/* Featured Products */}
       <section className="bg-[#f5f1ea] px-4 py-16 sm:px-6 md:py-20 dark:bg-stone-900">

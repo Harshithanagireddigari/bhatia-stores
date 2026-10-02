@@ -232,3 +232,55 @@ export const notifications = pgTable("notifications", {
   isRead: integer("is_read").notNull().default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+export const coupons = pgTable("coupons", {
+  id: text("id").primaryKey(),
+  code: text("code").notNull().unique(),
+  discountType: text("discount_type").notNull().default("percentage"), // 'percentage' | 'fixed'
+  discountValue: numeric("discount_value", { precision: 10, scale: 2 }).notNull(),
+  isFirstOrderOnly: integer("is_first_order_only").notNull().default(0),
+  minOrderAmount: numeric("min_order_amount", { precision: 10, scale: 2 }).default("0"),
+  maxDiscountAmount: numeric("max_discount_amount", { precision: 10, scale: 2 }),
+  usageLimit: integer("usage_limit"),
+  usedCount: integer("used_count").notNull().default(0),
+  startDate: timestamp("start_date"),
+  expiryDate: timestamp("expiry_date"),
+  isActive: integer("is_active").notNull().default(1),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const deliveryAgents = pgTable("delivery_agents", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  phone: text("phone").notNull().unique(),
+  email: text("email").notNull().unique(),
+  vehicleNumber: text("vehicle_number"),
+  status: text("status").notNull().default("active"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const deliveryAssignments = pgTable("delivery_assignments", {
+  id: text("id").primaryKey(),
+  orderId: text("order_id")
+    .notNull()
+    .references(() => orders.id, { onDelete: "cascade" }),
+  agentId: text("agent_id")
+    .notNull()
+    .references(() => deliveryAgents.id, { onDelete: "cascade" }),
+  currentStatus: text("current_status").notNull().default("ordered"),
+  statusNotes: text("status_notes"),
+  proofImageUrl: text("proof_image_url"),
+  deliveryOtp: text("delivery_otp").default("4892"),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const adminTeam = pgTable("admin_team", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  role: text("role").notNull().default("admin"),
+  permissions: jsonb("permissions").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+

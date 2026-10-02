@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import cloudinary from "@/lib/cloudinary";
 import { getSessionUser } from "@/lib/auth";
 import fs from "node:fs";
 import path from "node:path";
@@ -41,56 +40,7 @@ export async function POST(req: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    const hasCloudinaryConfig = Boolean(
-      process.env.CLOUDINARY_CLOUD_NAME &&
-      process.env.CLOUDINARY_API_KEY &&
-      process.env.CLOUDINARY_API_SECRET
-    );
-
-    if (hasCloudinaryConfig) {
-      const folder =
-        assetType === "hero"
-          ? "bhatia-hero"
-          : assetType === "auth"
-          ? "bhatia-auth"
-          : assetType === "category"
-          ? "bhatia-categories"
-          : "bhatia-products";
-
-      try {
-        const result: any = await new Promise((resolve, reject) => {
-          cloudinary.uploader
-            .upload_stream(
-              {
-                folder,
-                resource_type: "auto",
-                use_filename: false,
-                unique_filename: true,
-              },
-              (error, res) => {
-                if (error) {
-                  reject(error);
-                } else {
-                  resolve(res);
-                }
-              }
-            )
-            .end(buffer);
-        });
-
-        if (result?.secure_url) {
-          return NextResponse.json({
-            imageUrl: result.secure_url,
-            imagePublicId: result.public_id || null,
-            mediaType: isVideo ? "video" : "image",
-          });
-        }
-      } catch (cloudErr) {
-        console.warn("Cloudinary upload failed, falling back to local storage:", cloudErr);
-      }
-    }
-
-    // Fallback: save to public/uploads/
+    // Directly save to local filesystem in public/uploads/
     try {
       const uploadDir = path.join(process.cwd(), "public", "uploads");
       if (!fs.existsSync(uploadDir)) {

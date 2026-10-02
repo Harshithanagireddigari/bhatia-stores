@@ -233,10 +233,10 @@ export default function SuiteBuilderPage() {
         {/* Header Hero */}
         <div className="rounded-[32px] border border-[#e2d5c3] bg-white p-8 sm:p-12 shadow-xl dark:border-[#382f25] dark:bg-[#1a1613] text-center space-y-4">
           <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-[0.2em] bg-stone-100 dark:bg-stone-800 text-[#b49663] dark:text-[#c5a059]">
-            <Sparkles className="h-4 w-4" /> Interactive Suite Builder
+            <Sparkles className="h-4 w-4" /> Interactive Suite Completion
           </span>
           <h1 className="font-serif text-3xl sm:text-4xl font-extrabold text-stone-900 dark:text-white">
-            Home & Project Suite Builder
+            Home & Project Suite Completion
           </h1>
           <p className="max-w-2xl mx-auto text-xs sm:text-sm text-stone-600 dark:text-stone-300 leading-relaxed">
             Select room type (Bathroom, Hall, Kitchen, Outdoor) and choose matching fixtures to auto-calculate total package pricing with 1-click suite cart checkout.

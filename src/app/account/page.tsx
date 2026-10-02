@@ -479,13 +479,16 @@ export default function AccountPage() {
             </nav>
 
             <div className="mt-6 border-t border-stone-100 pt-4 dark:border-stone-800">
-              <Link
-                href="/logout"
+              <button
+                onClick={async () => {
+                  await fetch("/api/auth/logout", { method: "POST" });
+                  window.location.href = "/login";
+                }}
                 className="flex w-full items-center gap-3 rounded-2xl px-4 py-2.5 text-xs font-semibold text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40 transition"
               >
                 <LogOut size={16} />
-                <span>Sign Out</span>
-              </Link>
+                <span>Logout</span>
+              </button>
             </div>
           </aside>
 

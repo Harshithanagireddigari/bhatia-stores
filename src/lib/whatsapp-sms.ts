@@ -34,6 +34,21 @@ export function getWhatsAppUrl(phone: string, text: string): string {
 /**
  * Generate Professional Formatted WhatsApp Message for Customer Orders
  */
+export interface OrderMessageData {
+  orderId: string;
+  customerName: string;
+  status: string;
+  totalAmount: string;
+  paymentMethod?: string;
+  address?: string;
+  city?: string;
+  phone: string;
+  deliveryOtp?: string;
+}
+
+/**
+ * Generate Professional Formatted WhatsApp Message for Customer Orders
+ */
 export function formatOrderWhatsAppMessage({
   orderId,
   customerName,
@@ -42,6 +57,7 @@ export function formatOrderWhatsAppMessage({
   paymentMethod = "Cash on Delivery",
   address,
   city,
+  deliveryOtp,
 }: OrderMessageData): string {
   const shortId = orderId.slice(0, 8).toUpperCase();
   const upperStatus = status.toUpperCase();
@@ -59,7 +75,7 @@ Thank you for shopping with *The Bhatias Premium Hardware Store*! Your order sta
 • *Current Status:* ${upperStatus} ✓
 • *Total Amount:* ₹${parseFloat(totalAmount).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
 • *Payment Method:* ${paymentMethod}
-
+${deliveryOtp ? `\n🔑 *YOUR DELIVERY VERIFICATION OTP:* *${deliveryOtp}*\n_(Please share this 4-digit OTP with your delivery executive upon arrival to receive your parcel)_\n` : ""}
 ${address ? `📍 *Delivery Address:*\n${address}${city ? `, ${city}` : ""}\n` : ""}
 🚚 *Live Order Tracking:*
 https://bhatia-stores.vercel.app/orders/${orderId}
