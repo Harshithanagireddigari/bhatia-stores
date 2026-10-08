@@ -1,48 +1,43 @@
+import { unstable_cache } from "next/cache";
 import { MetadataRoute } from "next";
+import { db } from "@/db";
+import { products } from "@/db/schema";
+
+const baseUrl = "https://bhatia-stores.vercel.app";
+
+const getProductPages = unstable_cache(
+  () => db.select({ id: products.id, createdAt: products.createdAt }).from(products),
+  ["sitemap-products"],
+  { revalidate: 3600 },
+);
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = "https://bhatia-stores.vercel.app";
-
-  // Core static routes
-  const routes = [
-    "",
-    "/shop",
-    "/orders",
-    "/cart",
-    "/wishlist",
-    "/account",
-    "/login",
-    "/register",
-    "/forgot-password",
-    "/privacy-policy",
-    "/terms-and-conditions",
-    "/returns-and-exchange",
-    "/contact",
+  const generatedAt = new Date();
+  const publicRoutes = [
+    { path: "", priority: 1.0, frequency: "daily" as const },
+    { path: "/shop", priority: 0.9, frequency: "daily" as const },
+    { path: "/complete-bathroom", priority: 0.8, frequency: "weekly" as const },
+    { path: "/boq", priority: 0.7, frequency: "monthly" as const },
+    { path: "/contact", priority: 0.6, frequency: "monthly" as const },
+    { path: "/privacy-policy", priority: 0.4, frequency: "yearly" as const },
+    { path: "/terms-and-conditions", priority: 0.4, frequency: "yearly" as const },
+    { path: "/returns-and-exchange", priority: 0.4, frequency: "yearly" as const },
   ].map((route) => ({
-    url: `${baseUrl}${route}`,
-    lastModified: new Date().toISOString(),
-    changeFrequency: "daily" as const,
-    priority: route === "" ? 1.0 : 0.8,
+    url: `${baseUrl}${route.path}`,
+    lastModified: generatedAt,
+    changeFrequency: route.frequency,
+    priority: route.priority,
   }));
 
-  // Fetch product IDs for dynamic product page indexing
   try {
-    const res = await fetch(`${baseUrl}/api/products`, { cache: "no-store" });
-    if (res.ok) {
-      const products = await res.json();
-      if (Array.isArray(products)) {
-        const productUrls = products.map((product: { id: string; updatedAt?: string }) => ({
-          url: `${baseUrl}/product/${product.id}`,
-          lastModified: product.updatedAt ? new Date(product.updatedAt).toISOString() : new Date().toISOString(),
-          changeFrequency: "weekly" as const,
-          priority: 0.7,
-        }));
-        return [...routes, ...productUrls];
-      }
-    }
+    const productPages = await getProductPages();
+    return [...publicRoutes, ...productPages.map((product) => ({
+      url: `${baseUrl}/product/${product.id}`,
+      lastModified: product.createdAt,
+      changeFrequency: "weekly" as const,
+      priority: 0.7,
+    }))];
   } catch {
-    // fallback if fetch during static build fails
+    return publicRoutes;
   }
-
-  return routes;
 }

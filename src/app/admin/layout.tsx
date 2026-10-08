@@ -12,5 +12,5 @@ export default async function AdminLayout({
     return <AdminLoginPortal />;
   }
 
-  return <>{children}</>;
+  return <div className="admin-portal">{children}</div>;
 }

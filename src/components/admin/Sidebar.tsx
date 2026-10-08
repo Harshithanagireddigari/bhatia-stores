@@ -35,11 +35,39 @@ const navigation = [
   { name: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
+const mobileNavigation = [
+  { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
+  { name: "Products", href: "/admin/products", icon: Package },
+  { name: "Orders", href: "/admin/orders", icon: ShoppingCart },
+  { name: "Team", href: "/admin/team", icon: Users },
+  { name: "Settings", href: "/admin/settings", icon: Settings },
+];
+
 export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed left-0 top-0 z-50 h-screen w-64 bg-white border-r border-gray-200 dark:border-gray-700 dark:bg-gray-800">
+    <>
+      <nav className="fixed inset-x-0 bottom-0 z-[60] grid grid-cols-5 border-t border-gray-200 bg-white/95 px-1 pb-[env(safe-area-inset-bottom)] pt-1 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur dark:border-gray-700 dark:bg-gray-900/95 md:hidden">
+        {mobileNavigation.map((item) => {
+          const active = item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg text-[10px] font-semibold ${
+                active ? "text-indigo-600 dark:text-indigo-400" : "text-gray-500 dark:text-gray-400"
+              }`}
+            >
+              <Icon size={19} strokeWidth={active ? 2.25 : 1.8} />
+              <span>{item.name}</span>
+            </Link>
+          );
+        })}
+      </nav>
+
+    <aside className="fixed left-0 top-0 z-50 hidden h-screen w-64 border-r border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 md:block">
       <div className="flex h-full flex-col">
         {/* Logo */}
         <div className="border-b border-gray-200 px-6 py-4 dark:border-gray-700">
@@ -93,5 +121,6 @@ export default function Sidebar() {
         </div>
       </div>
     </aside>
+    </>
   );
 }

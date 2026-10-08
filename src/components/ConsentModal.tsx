@@ -45,6 +45,7 @@ export default function ConsentModal() {
               src="/logo.png"
               alt="Bhatia Stores Logo"
               fill
+              sizes="48px"
               className="object-cover"
             />
           </div>

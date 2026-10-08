@@ -37,7 +37,7 @@ export default function ProductCard({ product }: Props) {
 
   return (
     <>
-      <div className="group flex flex-col rounded-2xl border border-stone-200 bg-white p-4 shadow-sm transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] hover:-translate-y-1 hover:shadow-xl dark:border-stone-800 dark:bg-stone-900 font-sans">
+      <div className="group flex min-w-0 flex-col rounded-xl border border-stone-200 bg-white p-2.5 shadow-sm transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] hover:-translate-y-1 hover:shadow-xl dark:border-stone-800 dark:bg-stone-900 sm:rounded-2xl sm:p-4 font-sans">
         <div className="relative aspect-square overflow-hidden rounded-xl bg-stone-50 dark:bg-stone-950">
           <Link href={`/product/${product.id}`} className="block w-full h-full">
             <Image
@@ -51,7 +51,7 @@ export default function ProductCard({ product }: Props) {
           {/* Quick View Floating Action */}
           <button
             onClick={() => setQuickViewId(product.id)}
-            className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 text-[11px] font-bold text-stone-900 shadow-md backdrop-blur-sm transition-all duration-200 opacity-0 group-hover:opacity-100 hover:bg-[#b49663] hover:text-white dark:bg-stone-900/95 dark:text-white"
+            className="absolute bottom-3 left-1/2 hidden -translate-x-1/2 items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 text-[11px] font-bold text-stone-900 shadow-md backdrop-blur-sm transition-all duration-200 opacity-0 group-hover:opacity-100 hover:bg-[#b49663] hover:text-white dark:bg-stone-900/95 dark:text-white md:flex"
           >
             <Eye size={13} />
             <span>Quick View</span>
@@ -59,21 +59,21 @@ export default function ProductCard({ product }: Props) {
         </div>
 
         <Link href={`/product/${product.id}`} className="block">
-          <h3 className="mt-3 text-sm font-bold text-stone-900 dark:text-white line-clamp-2 transition-colors duration-300 group-hover:text-[#b49663] dark:group-hover:text-[#c5a059]">
+          <h3 className="mt-2.5 text-xs font-bold leading-4 text-stone-900 transition-colors duration-300 group-hover:text-[#b49663] dark:text-white dark:group-hover:text-[#c5a059] sm:mt-3 sm:text-sm sm:leading-normal">
             {product.name}
           </h3>
-          <p className="mt-1 text-sm font-bold text-[#b49663] dark:text-[#c5a059]">
+          <p className="mt-1 text-xs font-bold text-[#b49663] dark:text-[#c5a059] sm:text-sm">
             ₹{Number(product.price).toLocaleString("en-IN")}
           </p>
         </Link>
 
-        <div className="mt-3 flex items-center justify-between">
+        <div className="mt-2.5 flex items-center justify-between sm:mt-3">
           <button
             onClick={handleAddToCart}
-            className="flex items-center gap-1.5 rounded-full bg-[#b49663] px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#967b4b] focus:outline-none"
+            className="flex h-8 items-center gap-1.5 rounded-lg bg-[#b49663] px-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#967b4b] focus:outline-none sm:h-auto sm:rounded-full sm:px-3.5 sm:py-1.5"
           >
             <ShoppingCart size={13} />
-            <span>Add to Cart</span>
+            <span className="hidden sm:inline">Add to Cart</span>
           </button>
           <button
             onClick={() =>
@@ -86,7 +86,7 @@ export default function ProductCard({ product }: Props) {
               })
             }
             aria-label={hasItem(product.id) ? "Remove from wishlist" : "Add to wishlist"}
-            className={`rounded-full p-1.5 transition ${
+            className={`rounded-lg p-1.5 transition sm:rounded-full ${
               hasItem(product.id)
                 ? "text-red-500 dark:text-red-400"
                 : "text-stone-400 hover:text-[#b49663] dark:text-stone-500 dark:hover:text-[#c5a059]"

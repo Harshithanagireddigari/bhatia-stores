@@ -16,7 +16,11 @@ export async function GET(req: Request) {
     }
 
     const list = await query.orderBy(desc(coupons.createdAt));
-    return NextResponse.json(Array.isArray(list) ? list : []);
+    const response = NextResponse.json(Array.isArray(list) ? list : []);
+    if (!all) {
+      response.headers.set("Cache-Control", "public, s-maxage=300, stale-while-revalidate=86400");
+    }
+    return response;
   } catch (error) {
     console.error("Error fetching coupons:", error);
     return NextResponse.json([]);

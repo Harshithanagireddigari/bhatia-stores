@@ -23,7 +23,7 @@ export default function CartPage() {
         </p>
         <Link
           href="/shop"
-          className="mt-6 inline-block rounded-full bg-indigo-600 px-8 py-3 font-semibold text-white transition hover:bg-indigo-700"
+          className="mt-6 inline-block rounded-lg bg-[#b49663] px-8 py-3 font-semibold text-white transition hover:bg-[#967b4b]"
         >
           Go to Shop
         </Link>
@@ -32,14 +32,14 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8f6f1] dark:bg-[#12100e] py-10 px-4 sm:px-6 lg:px-8 font-sans text-stone-800 dark:text-stone-200">
+    <div className="min-h-screen bg-[#f8f6f1] px-3 py-5 font-sans text-stone-800 dark:bg-[#12100e] dark:text-stone-200 sm:px-6 sm:py-10 lg:px-8">
       <div className="mx-auto max-w-4xl">
         
         {/* Navigation Back Bar */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="mb-4 flex items-center justify-between sm:mb-6">
           <Link
             href="/shop"
-            className="inline-flex items-center gap-2 rounded-2xl border border-stone-300 bg-white px-4 py-2.5 text-xs font-bold text-stone-800 shadow-sm transition hover:bg-stone-100 dark:border-stone-800 dark:bg-stone-900 dark:text-white"
+            className="inline-flex items-center gap-2 rounded-lg border border-stone-300 bg-white px-3 py-2 text-xs font-bold text-stone-800 shadow-sm transition hover:bg-stone-100 dark:border-stone-800 dark:bg-stone-900 dark:text-white sm:rounded-2xl sm:px-4 sm:py-2.5"
           >
             <span className="text-[#b49663]">←</span>
             <span>Continue Shopping</span>
@@ -51,9 +51,9 @@ export default function CartPage() {
         </div>
 
         {/* Hero Header */}
-        <div className="rounded-[28px] border border-[#e2d5c3] bg-white p-8 shadow-lg dark:border-[#382f25] dark:bg-[#1a1613] mb-8 flex items-center justify-between">
+        <div className="mb-5 flex items-center justify-between rounded-xl border border-[#e2d5c3] bg-white p-4 shadow-sm dark:border-[#382f25] dark:bg-[#1a1613] sm:mb-8 sm:rounded-[28px] sm:p-8 sm:shadow-lg">
           <div>
-            <h1 className="font-serif text-3xl font-bold text-stone-900 dark:text-white">
+            <h1 className="font-serif text-2xl font-bold text-stone-900 dark:text-white sm:text-3xl">
               Shopping Cart
             </h1>
             <p className="mt-1 text-xs text-stone-600 dark:text-stone-300">
@@ -62,21 +62,21 @@ export default function CartPage() {
           </div>
         </div>
 
-      <div className="mt-8 space-y-4">
+      <div className="mt-5 space-y-3 sm:mt-8 sm:space-y-4">
         {items.map((item) => (
           <div
             key={item.productId}
-            className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800"
+            className="grid grid-cols-[4.5rem_minmax(0,1fr)_auto] gap-3 rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800 sm:flex sm:items-center sm:gap-4 sm:rounded-2xl sm:p-4"
           >
-            <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl bg-gray-100 text-3xl dark:bg-gray-700">
+            <div className="flex h-[4.5rem] w-[4.5rem] items-center justify-center overflow-hidden rounded-lg bg-gray-100 text-3xl dark:bg-gray-700 sm:h-20 sm:w-20 sm:rounded-xl">
               {isProductImage(item.image) ? (
                 <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
               ) : (
                 item.image
               )}
             </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-gray-900 dark:text-white">
+            <div className="min-w-0 flex-1">
+              <h3 className="line-clamp-2 text-sm font-semibold text-gray-900 dark:text-white sm:text-base">
                 {item.name}
               </h3>
               {(() => {
@@ -91,7 +91,7 @@ export default function CartPage() {
                 ₹{item.price.toFixed(2)} each
               </p>
             </div>
-            <div className="flex items-center rounded-full border border-gray-300 dark:border-gray-600">
+            <div className="col-start-2 row-start-2 flex w-fit items-center rounded-full border border-gray-300 dark:border-gray-600 sm:col-auto sm:row-auto">
               <button
                 onClick={() => updateQuantity(item.productId, item.quantity - 1)}
                 className="px-2 py-1 text-sm font-medium text-gray-600 dark:text-gray-300"
@@ -108,12 +108,12 @@ export default function CartPage() {
                 +
               </button>
             </div>
-            <p className="w-20 text-right font-semibold text-gray-900 dark:text-white">
+            <p className="col-start-3 row-start-2 self-center whitespace-nowrap text-right text-sm font-semibold text-gray-900 dark:text-white sm:col-auto sm:row-auto sm:w-20 sm:text-base">
               ₹{(item.price * item.quantity).toFixed(2)}
             </p>
             <button
               onClick={() => removeItem(item.productId)}
-              className="rounded-full p-2 text-gray-400 transition hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+              className="col-start-3 row-start-1 self-start rounded-lg p-2 text-gray-400 transition hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20 dark:hover:text-red-400 sm:col-auto sm:row-auto sm:rounded-full"
               aria-label="Remove"
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -125,7 +125,7 @@ export default function CartPage() {
       </div>
 
       {/* Summary */}
-      <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+      <div className="mt-5 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 sm:mt-8 sm:rounded-2xl sm:p-6">
         <div className="flex items-center justify-between text-lg">
           <span className="text-gray-600 dark:text-gray-300">Total</span>
           <span className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -134,7 +134,7 @@ export default function CartPage() {
         </div>
         <Link
           href="/checkout"
-          className="mt-6 block w-full rounded-full bg-indigo-600 py-3 text-center font-semibold text-white transition hover:bg-indigo-700"
+          className="mt-5 block w-full rounded-lg bg-[#b49663] py-3.5 text-center text-sm font-bold text-white transition hover:bg-[#967b4b] sm:mt-6 sm:rounded-full"
         >
           Proceed to Checkout
         </Link>

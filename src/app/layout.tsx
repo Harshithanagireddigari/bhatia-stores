@@ -4,43 +4,51 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { CartProvider } from "@/components/CartContext";
 import { WishlistProvider } from "@/components/WishlistContext";
 import AppLayout from "@/components/AppLayout";
-import { Toaster } from "sonner";
-import { Inter, Poppins } from "next/font/google";
+import ClientOverlays from "@/components/ClientOverlays";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
-// Load fonts – Inter for body, Poppins for display/headings
 const inter = Inter({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["400", "600"],
   variable: "--font-body",
-});
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["400", "600", "700"],
-  variable: "--font-display",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Bhatia Stores - Your One-Stop Shop",
-  description: "Premium products with fast delivery and secure payments.",
+  metadataBase: new URL("https://bhatia-stores.vercel.app"),
+  title: { default: "Bhatia Stores | Premium Hardware & Sanitaryware", template: "%s | Bhatia Stores" },
+  description: "Shop premium tiles, sanitaryware, faucets, fittings, and hardware with reliable delivery across India.",
+  alternates: { canonical: "/" },
+  robots: { index: true, follow: true },
+  openGraph: {
+    type: "website",
+    locale: "en_IN",
+    url: "/",
+    siteName: "Bhatia Stores",
+    title: "Bhatia Stores | Premium Hardware & Sanitaryware",
+    description: "Premium tiles, sanitaryware, faucets, fittings, and hardware.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Bhatia Stores",
+    description: "Premium tiles, sanitaryware, faucets, fittings, and hardware.",
+  },
 };
-
-import ConsentModal from "@/components/ConsentModal";
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${poppins.variable}`}
+      className={inter.variable}
       suppressHydrationWarning
     >
       <body className="bg-[#f8f6f1] text-stone-900 antialiased transition-colors dark:bg-[#12100e] dark:text-stone-100 font-sans">
         <ThemeProvider>
           <CartProvider>
             <WishlistProvider>
-              <ConsentModal />
               <AppLayout>{children}</AppLayout>
-              <Toaster position="top-right" richColors />
+              <ClientOverlays />
             </WishlistProvider>
           </CartProvider>
         </ThemeProvider>

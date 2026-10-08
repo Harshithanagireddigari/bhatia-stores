@@ -1,13 +1,43 @@
 import Link from "next/link";
+import Image from "next/image";
+import { unstable_cache } from "next/cache";
 import { and, asc, desc, eq } from "drizzle-orm";
 import { ArrowRight, Headphones, ShieldCheck, Tag, Truck } from "lucide-react";
 import { db } from "@/db";
 import { categories as categoriesTable, heroSlides, products } from "@/db/schema";
 import Hero from "@/components/Hero";
-import OffersBannerSection from "@/components/OffersBannerSection";
+import DeferredOffersSection from "@/components/DeferredOffersSection";
 import AnimatedCategorySection from "@/components/AnimatedCategorySection";
 
 export const dynamic = "force-dynamic";
+
+const getHomePageData = unstable_cache(
+  () => Promise.all([
+    db.select({
+      id: products.id,
+      name: products.name,
+      price: products.price,
+      image: products.image,
+      category: products.category,
+      createdAt: products.createdAt,
+    }).from(products).orderBy(desc(products.createdAt)).limit(4),
+    db.select().from(heroSlides).where(eq(heroSlides.isActive, 1)).orderBy(heroSlides.sortOrder),
+    db.select({
+      id: categoriesTable.id,
+      name: categoriesTable.name,
+      slug: categoriesTable.slug,
+      image: categoriesTable.image,
+      description: categoriesTable.description,
+    }).from(categoriesTable)
+      .where(and(eq(categoriesTable.isVisible, 1), eq(categoriesTable.displayOnHomepage, 1)))
+      .orderBy(asc(categoriesTable.sortOrder), asc(categoriesTable.name)),
+  ]),
+  ["home-page-data"],
+  { revalidate: 300 },
+);
+
+type HomePageData = Awaited<ReturnType<typeof getHomePageData>>;
+const emptyHomePageData = [[], [], []] as unknown as HomePageData;
 
 const defaultCategories = [
   { name: "Tiles", subtitle: "Floor & Wall Tiles", slug: "tiles", image: "" },
@@ -19,11 +49,10 @@ const defaultCategories = [
 ];
 
 export default async function HomePage() {
-  const [latestProducts, activeHeroSlides, dbCategories] = await Promise.all([
-    db.select().from(products).orderBy(desc(products.createdAt)).limit(4),
-    db.select().from(heroSlides).orderBy(heroSlides.sortOrder).then((slides) => slides.filter((slide) => slide.isActive === 1)),
-    db.select().from(categoriesTable).where(and(eq(categoriesTable.isVisible, 1), eq(categoriesTable.displayOnHomepage, 1))).orderBy(asc(categoriesTable.sortOrder), asc(categoriesTable.name)),
-  ]);
+  const [latestProducts, activeHeroSlides, dbCategories] = await getHomePageData().catch((error) => {
+    console.error("Unable to load homepage catalog data", error);
+    return emptyHomePageData;
+  });
 
   const productImages = latestProducts.map((product) => product.image).filter((img): img is string => typeof img === "string" && img.trim().length > 0);
 
@@ -63,40 +92,43 @@ export default async function HomePage() {
       <AnimatedCategorySection categories={displayCategories} />
 
       {/* Offers Section */}
-      <OffersBannerSection />
+      <DeferredOffersSection />
 
       {/* Featured Products */}
-      <section className="bg-[#f5f1ea] px-4 py-16 sm:px-6 md:py-20 dark:bg-stone-900">
+      <section className="bg-[#f5f1ea] px-4 py-9 sm:px-6 md:py-20 dark:bg-stone-900">
         <div className="mx-auto max-w-7xl">
-          <div className="mb-10 flex items-end justify-between gap-6">
+          <div className="mb-5 flex items-end justify-between gap-4 sm:mb-10 sm:gap-6">
             <div>
               <p className="text-xs font-bold uppercase tracking-[.2em] text-[#a08b68]">Fresh from showroom</p>
-              <h2 className="mt-2 font-serif text-3xl md:text-4xl text-[#2c241d] dark:text-white">Featured Pieces</h2>
+              <h2 className="mt-1 font-serif text-2xl text-[#2c241d] sm:mt-2 md:text-4xl dark:text-white">Featured Pieces</h2>
             </div>
             <Link href="/shop" className="text-sm font-semibold text-[#6b4f2c] hover:underline dark:text-[#e2bd72]">
               Shop all →
             </Link>
           </div>
 
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4">
             {latestProducts.map((product) => (
               <Link
                 key={product.id}
                 href={`/product/${product.id}`}
-                className="group rounded-2xl bg-white p-3 shadow-sm transition hover:-translate-y-1 hover:shadow-lg dark:bg-stone-800"
+                className="group min-w-0 rounded-xl bg-white p-2.5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg dark:bg-stone-800 sm:rounded-2xl sm:p-3"
               >
-                <div className="aspect-square overflow-hidden rounded-xl bg-stone-100 dark:bg-stone-900">
-                  <img
+                <div className="relative aspect-square overflow-hidden rounded-xl bg-stone-100 dark:bg-stone-900">
+                  <Image
                     src={product.image}
                     alt={product.name}
-                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                    fill
+                    sizes="(max-width: 639px) 46vw, (max-width: 1023px) 42vw, 22vw"
+                    quality={70}
+                    className="object-cover transition duration-500 group-hover:scale-105"
                   />
                 </div>
                 <div className="px-1 pb-2 pt-3">
                   <p className="text-[10px] font-bold uppercase tracking-[.14em] text-stone-500 dark:text-stone-400">
                     {product.category}
                   </p>
-                  <h3 className="mt-1 font-serif text-lg font-semibold text-[#2c241d] dark:text-white line-clamp-1">
+                  <h3 className="mt-1 font-serif text-sm font-semibold text-[#2c241d] sm:text-lg dark:text-white line-clamp-2">
                     {product.name}
                   </h3>
                   <p className="mt-2 text-sm font-bold text-[#b49663]">

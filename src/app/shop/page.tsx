@@ -152,12 +152,22 @@ function ShopContent() {
     router.replace(params.size ? `/shop?${params.toString()}` : "/shop");
   }
 
+  const activeFilterCount = [
+    Boolean(category),
+    selectedFinish !== "All",
+    selectedMount !== "All",
+    waterSavingOnly,
+    antiRustOnly,
+    sensorOnly,
+    Boolean(maxPriceFilter),
+  ].filter(Boolean).length;
+
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 font-sans">
+    <div className="mx-auto max-w-7xl px-4 py-5 font-sans sm:py-8">
       {/* Top Title & Quick BOQ Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+      <div className="mb-4 flex flex-col gap-3 md:mb-6 md:flex-row md:items-center md:justify-between md:gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-stone-900 dark:text-white font-serif">
+          <h1 className="font-serif text-2xl font-extrabold text-stone-900 dark:text-white sm:text-3xl">
             Bathware & Hardware Catalog
           </h1>
           <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
@@ -178,7 +188,7 @@ function ShopContent() {
 
           <a
             href="/boq"
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-[#b49663] text-[#b49663] dark:text-[#c5a059] text-xs font-bold hover:bg-[#b49663] hover:text-white transition"
+            className="inline-flex items-center gap-2 rounded-lg border border-[#b49663] px-3 py-2 text-xs font-bold text-[#b49663] transition hover:bg-[#b49663] hover:text-white dark:text-[#c5a059] sm:rounded-full sm:px-4 sm:py-2.5"
           >
             <span>Request BOQ Quote 📄</span>
           </a>
@@ -217,7 +227,7 @@ function ShopContent() {
         </div>
 
         {/* Top Horizontal Filter Console */}
-        <div className="bg-white dark:bg-stone-900 p-4 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-sm space-y-3">
+        <div className="hidden space-y-3 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm dark:border-stone-800 dark:bg-stone-900 md:block">
           <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
             {/* Search Input */}
             <form onSubmit={submitSearch} className="relative flex-1">
@@ -317,13 +327,34 @@ function ShopContent() {
             </label>
           </div>
         </div>
+
+        <div className="flex items-center gap-2 md:hidden">
+          <button
+            onClick={() => setShowFiltersMobile(true)}
+            className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-lg border border-stone-200 bg-white px-3 text-xs font-bold text-stone-800 shadow-sm dark:border-stone-800 dark:bg-stone-900 dark:text-white"
+          >
+            <Filter size={15} className="text-[#b49663]" />
+            <span>Filter</span>
+            {activeFilterCount > 0 && (
+              <span className="rounded-full bg-[#b49663] px-1.5 py-0.5 text-[10px] text-white">{activeFilterCount}</span>
+            )}
+          </button>
+          <button
+            onClick={resetAllFilters}
+            disabled={activeFilterCount === 0 && !search}
+            className="inline-flex h-10 items-center justify-center gap-1 rounded-lg border border-stone-200 bg-white px-3 text-xs font-bold text-stone-600 disabled:opacity-40 dark:border-stone-800 dark:bg-stone-900 dark:text-stone-300"
+          >
+            <RotateCcw size={14} />
+            <span>Reset</span>
+          </button>
+        </div>
       </div>
 
       {/* Main Full-Width Product Catalog */}
       <main className="space-y-6">
         {/* Products Grid */}
         {loading ? (
-          <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
             {Array.from({ length: 8 }).map((_, i) => (
               <div
                 key={i}
@@ -348,7 +379,7 @@ function ShopContent() {
             </button>
           </div>
         ) : (
-          <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
             {products.map((product) => {
               const isCompared = compareList.some((p) => p.id === product.id);
               return (
@@ -373,6 +404,98 @@ function ShopContent() {
           </div>
         )}
       </main>
+
+      {showFiltersMobile && (
+        <div className="fixed inset-0 z-[70] bg-black/45 backdrop-blur-[1px] md:hidden" role="dialog" aria-modal="true" aria-label="Product filters">
+          <button
+            className="absolute inset-0 cursor-default"
+            aria-label="Close filters"
+            onClick={() => setShowFiltersMobile(false)}
+          />
+          <section className="absolute inset-x-0 bottom-0 max-h-[82dvh] overflow-y-auto rounded-t-2xl bg-white px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 shadow-2xl dark:bg-stone-900">
+            <div className="mx-auto h-1 w-10 rounded-full bg-stone-300 dark:bg-stone-700" />
+            <div className="mt-4 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold text-stone-900 dark:text-white">Filters</p>
+                <p className="mt-0.5 text-[11px] text-stone-500">Narrow the catalog to the right fittings.</p>
+              </div>
+              <button
+                onClick={resetAllFilters}
+                className="text-xs font-bold text-[#b49663]"
+              >
+                Clear all
+              </button>
+            </div>
+
+            <div className="mt-5 space-y-5">
+              <label className="block text-xs font-bold text-stone-700 dark:text-stone-300">
+                Finish
+                <select
+                  value={selectedFinish}
+                  onChange={(event) => setSelectedFinish(event.target.value)}
+                  className="mt-2 h-11 w-full rounded-lg border border-stone-200 bg-stone-50 px-3 text-sm font-medium text-stone-900 outline-none dark:border-stone-700 dark:bg-stone-950 dark:text-white"
+                >
+                  <option value="All">All finishes</option>
+                  <option value="Chrome">Chrome Polish</option>
+                  <option value="Matt Black">Matt Black</option>
+                  <option value="Brushed Gold">Brushed Gold</option>
+                  <option value="Rose Gold">Rose Gold</option>
+                  <option value="Antique Brass">Antique Brass</option>
+                </select>
+              </label>
+
+              <label className="block text-xs font-bold text-stone-700 dark:text-stone-300">
+                Mount type
+                <select
+                  value={selectedMount}
+                  onChange={(event) => setSelectedMount(event.target.value)}
+                  className="mt-2 h-11 w-full rounded-lg border border-stone-200 bg-stone-50 px-3 text-sm font-medium text-stone-900 outline-none dark:border-stone-700 dark:bg-stone-950 dark:text-white"
+                >
+                  <option value="All">All mount types</option>
+                  <option value="Wall Mount">Wall Mount</option>
+                  <option value="Table Top">Table Top / Countertop</option>
+                  <option value="Floor Mounted">Floor Mounted</option>
+                  <option value="Concealed">Concealed / In-Wall</option>
+                </select>
+              </label>
+
+              <label className="block text-xs font-bold text-stone-700 dark:text-stone-300">
+                Maximum price
+                <input
+                  type="number"
+                  min="0"
+                  value={maxPriceFilter}
+                  onChange={(event) => setMaxPriceFilter(event.target.value)}
+                  placeholder="No maximum"
+                  className="mt-2 h-11 w-full rounded-lg border border-stone-200 bg-stone-50 px-3 text-sm font-medium text-stone-900 outline-none placeholder:text-stone-400 dark:border-stone-700 dark:bg-stone-950 dark:text-white"
+                />
+              </label>
+
+              <div className="grid grid-cols-1 gap-2 border-y border-stone-100 py-4 dark:border-stone-800">
+                <label className="flex min-h-11 items-center justify-between text-xs font-semibold text-stone-700 dark:text-stone-300">
+                  <span>Water-saving products</span>
+                  <input type="checkbox" checked={waterSavingOnly} onChange={(event) => setWaterSavingOnly(event.target.checked)} className="h-4 w-4 accent-[#b49663]" />
+                </label>
+                <label className="flex min-h-11 items-center justify-between text-xs font-semibold text-stone-700 dark:text-stone-300">
+                  <span>Anti-rust finish</span>
+                  <input type="checkbox" checked={antiRustOnly} onChange={(event) => setAntiRustOnly(event.target.checked)} className="h-4 w-4 accent-[#b49663]" />
+                </label>
+                <label className="flex min-h-11 items-center justify-between text-xs font-semibold text-stone-700 dark:text-stone-300">
+                  <span>Touchless sensor</span>
+                  <input type="checkbox" checked={sensorOnly} onChange={(event) => setSensorOnly(event.target.checked)} className="h-4 w-4 accent-[#b49663]" />
+                </label>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowFiltersMobile(false)}
+              className="mt-5 flex h-12 w-full items-center justify-center rounded-lg bg-[#b49663] text-sm font-bold text-white shadow-lg"
+            >
+              Apply filters
+            </button>
+          </section>
+        </div>
+      )}
 
       {/* Compare Modal Drawer */}
       {showCompareModal && (

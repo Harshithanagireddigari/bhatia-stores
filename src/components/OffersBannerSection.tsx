@@ -41,23 +41,23 @@ export default function OffersBannerSection() {
   if (coupons.length === 0) return null;
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 font-sans">
+    <section className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-8 font-sans">
       {/* EXCLUSIVE OFFERS HERO CARD */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#2a221b] via-[#403328] to-[#1e1712] p-8 sm:p-10 text-white shadow-xl border border-[#c5a059]/30">
+      <div className="relative overflow-hidden rounded-xl border border-[#c5a059]/30 bg-gradient-to-r from-[#2a221b] via-[#403328] to-[#1e1712] p-5 text-white shadow-xl sm:rounded-3xl sm:p-10">
         <div className="relative z-10 max-w-xl">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-[#c5a059]/50 bg-[#c5a059]/20 px-3.5 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[#e2c792]">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-[#c5a059]/50 bg-[#c5a059]/20 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em] text-[#e2c792] sm:px-3.5 sm:text-[10px] sm:tracking-[0.2em]">
             <Sparkles size={13} />
             EXCLUSIVE OFFERS & FESTIVE DEALS
           </span>
-          <h2 className="mt-4 font-serif text-3xl sm:text-4xl font-bold tracking-tight text-white">
+          <h2 className="mt-3 font-serif text-2xl font-bold tracking-tight text-white sm:mt-4 sm:text-4xl">
             Upto <span className="text-[#e2c792]">40% OFF</span> on Premium Bathroom Suites
           </h2>
-          <p className="mt-2 text-xs text-stone-300">
+          <p className="mt-2 text-xs leading-5 text-stone-300 sm:leading-normal">
             Apply verified discount coupons at checkout for extra instant savings on tiles, faucets, and sanitaryware.
           </p>
           <Link
             href="/shop"
-            className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[#b49663] px-6 py-3 text-xs font-bold text-white shadow-md transition hover:bg-[#967b4b]"
+            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#b49663] px-4 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-[#967b4b] sm:mt-6 sm:rounded-2xl sm:px-6 sm:py-3"
           >
             <span>Shop Now</span>
           </Link>
@@ -68,7 +68,7 @@ export default function OffersBannerSection() {
       </div>
 
       {/* ACTIVE COUPONS CARDS ROW (Matches Image 3) */}
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-4 grid gap-3 sm:mt-6 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {coupons.map((cpn, idx) => {
           const colorStyles = [
             "border-red-200 bg-red-50/70 dark:border-red-950 dark:bg-red-950/30 text-red-900 dark:text-red-200",

@@ -53,7 +53,7 @@ export default function AIChatbot() {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 font-sans">
+    <div className="fixed bottom-20 right-4 z-50 font-sans md:bottom-6 md:right-6">
       {/* Floating Toggle Button */}
       {!isOpen && (
         <button
@@ -70,7 +70,7 @@ export default function AIChatbot() {
 
       {/* Chatbot Popover (Matches Image 9) */}
       {isOpen && (
-        <div className="flex h-[520px] w-[360px] flex-col overflow-hidden rounded-[28px] border border-stone-200 bg-white shadow-2xl dark:border-stone-800 dark:bg-[#1a1613]">
+        <div className="flex h-[min(520px,calc(100dvh-7rem))] w-[calc(100vw-2rem)] max-w-[360px] flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-2xl dark:border-stone-800 dark:bg-[#1a1613] md:h-[520px] md:w-[360px] md:rounded-[28px]">
           
           {/* Header */}
           <div className="flex items-center justify-between border-b border-stone-100 bg-[#251f1a] p-4 text-white dark:border-stone-800">

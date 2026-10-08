@@ -1,10 +1,13 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import dynamic from "next/dynamic";
 import type { ReactNode } from "react";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
-import AIChatbot from "./AIChatbot";
+import MobileBottomNav from "./MobileBottomNav";
+
+const AIChatbot = dynamic(() => import("./AIChatbot"), { ssr: false });
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -18,9 +21,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen">{children}</main>
+      <main className="min-h-screen pb-20 md:pb-0">{children}</main>
       <AIChatbot />
       <Footer />
+      <MobileBottomNav />
     </>
   );
 }

@@ -111,11 +111,11 @@ export default function ProductPage({
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 font-sans">
-      <div className="flex items-center justify-between mb-6">
+    <div className="mx-auto max-w-6xl px-4 py-5 font-sans sm:py-8">
+      <div className="mb-4 flex items-center justify-between sm:mb-6">
         <button
           onClick={() => router.back()}
-          className="inline-flex items-center gap-2 rounded-2xl border border-stone-300 bg-white px-4 py-2.5 text-xs font-bold text-stone-800 shadow-sm transition hover:bg-stone-100 dark:border-stone-800 dark:bg-stone-900 dark:text-white"
+          className="inline-flex items-center gap-2 rounded-lg border border-stone-300 bg-white px-3 py-2 text-xs font-bold text-stone-800 shadow-sm transition hover:bg-stone-100 dark:border-stone-800 dark:bg-stone-900 dark:text-white sm:rounded-2xl sm:px-4 sm:py-2.5"
         >
           <span className="text-[#b49663]">←</span>
           <span>Go Back</span>
@@ -129,9 +129,9 @@ export default function ProductPage({
         </Link>
       </div>
 
-      <div className="grid gap-10 md:grid-cols-2">
+      <div className="grid gap-5 md:grid-cols-2 md:gap-10">
         {/* Product image */}
-        <div className="overflow-visible rounded-2xl bg-stone-100 p-2 dark:bg-stone-800">
+        <div className="overflow-visible rounded-xl bg-stone-100 p-1 dark:bg-stone-800 sm:rounded-2xl sm:p-2">
           {isProductImage(product.image) ? (
             <ProductImageZoom
               src={product.image}
@@ -150,10 +150,10 @@ export default function ProductPage({
           <span className="text-xs font-bold uppercase tracking-widest text-[#b49663]">
             {product.category}
           </span>
-          <h1 className="mt-2 text-3xl font-bold text-stone-900 dark:text-white">
+          <h1 className="mt-2 text-2xl font-bold text-stone-900 dark:text-white sm:text-3xl">
             {product.name}
           </h1>
-          <p className="mt-4 text-3xl font-bold text-stone-900 dark:text-white">
+          <p className="mt-3 text-2xl font-bold text-stone-900 dark:text-white sm:mt-4 sm:text-3xl">
             ₹{parseFloat(product.price).toFixed(2)}
           </p>
 
@@ -199,8 +199,8 @@ export default function ProductPage({
           </div>
 
           {product.stock > 0 && (
-            <div className="mt-8 flex flex-wrap items-center gap-4">
-              <div className="flex items-center rounded-full border border-stone-300 dark:border-stone-700">
+            <div className="mt-6 grid grid-cols-2 gap-2 sm:mt-8 sm:flex sm:flex-wrap sm:items-center sm:gap-4">
+              <div className="col-span-2 flex w-fit items-center justify-self-center rounded-full border border-stone-300 dark:border-stone-700 sm:col-auto sm:justify-self-auto">
                 <button
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
                   className="px-3.5 py-2 text-lg font-semibold text-stone-700 dark:text-stone-200"
@@ -225,7 +225,7 @@ export default function ProductPage({
                   addProductToCart();
                   toast.success(`Added ${quantity} to cart!`);
                 }}
-                className="rounded-full bg-[#b49663] px-8 py-3.5 font-bold text-white shadow-md transition hover:bg-[#967b4b]"
+                className="col-span-2 rounded-lg bg-[#b49663] px-5 py-3 font-bold text-white shadow-md transition hover:bg-[#967b4b] sm:col-auto sm:rounded-full sm:px-8 sm:py-3.5"
               >
                 Add to Cart
               </button>
@@ -240,7 +240,7 @@ export default function ProductPage({
                     quantity: 1,
                   })
                 }
-                className="rounded-full border border-rose-400 px-5 py-3.5 font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                className="rounded-lg border border-rose-400 px-3 py-3 text-sm font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 sm:rounded-full sm:px-5 sm:py-3.5 sm:text-base"
               >
                 {hasItem(product.id) ? "♥ Saved" : "♡ Add to Wishlist"}
               </button>
@@ -250,14 +250,14 @@ export default function ProductPage({
                   addProductToCart();
                   router.push("/checkout");
                 }}
-                className="rounded-full border border-[#b49663] px-8 py-3.5 font-bold text-[#b49663] transition hover:bg-amber-50 dark:hover:bg-amber-950/30"
+                className="rounded-lg border border-[#b49663] px-3 py-3 text-sm font-bold text-[#b49663] transition hover:bg-amber-50 dark:hover:bg-amber-950/30 sm:rounded-full sm:px-8 sm:py-3.5 sm:text-base"
               >
                 Buy Now
               </button>
 
               <button
                 onClick={chatOnWhatsApp}
-                className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-6 py-3.5 font-semibold text-white transition hover:bg-emerald-700"
+                className="col-span-2 inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-5 py-3 font-semibold text-white transition hover:bg-emerald-700 sm:col-auto sm:rounded-full sm:px-6 sm:py-3.5"
                 aria-label="Chat about this product on WhatsApp"
               >
                 <svg className="h-5 w-5" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
@@ -272,8 +272,8 @@ export default function ProductPage({
 
       {/* Related / Similar Products Section */}
       {relatedProducts.length > 0 && (
-        <section className="mt-16 border-t border-stone-200 pt-12 dark:border-stone-800 font-sans">
-          <div className="flex items-center justify-between mb-8">
+        <section className="mt-10 border-t border-stone-200 pt-8 dark:border-stone-800 font-sans sm:mt-16 sm:pt-12">
+          <div className="mb-5 flex items-center justify-between sm:mb-8">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#b49663]">
                 DISCOVER MORE
@@ -290,7 +290,7 @@ export default function ProductPage({
             </Link>
           </div>
 
-          <div className="grid gap-6 grid-cols-2 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-6">
             {relatedProducts.map((rel) => (
               <ProductCard key={rel.id} product={rel} />
             ))}

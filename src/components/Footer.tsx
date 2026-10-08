@@ -7,7 +7,7 @@ const supportEmail = "bhatiasanitaryware@gmail.com";
 
 export default function Footer() {
   return (
-    <footer id="contact" className="relative overflow-hidden border-t border-[#e2d5c3] bg-[#1a1613] text-stone-200 dark:border-stone-800 dark:bg-[#12100e] font-sans">
+    <footer id="contact" className="relative overflow-hidden border-t border-[#e2d5c3] bg-[#1a1613] pb-16 text-stone-200 dark:border-stone-800 dark:bg-[#12100e] font-sans md:pb-0">
       <div className="relative mx-auto max-w-7xl px-6 py-12 md:py-16">
         
         {/* TOP GRID */}
@@ -21,6 +21,7 @@ export default function Footer() {
                   src="/logo.png"
                   alt="The Bhatias Logo"
                   fill
+                  sizes="48px"
                   className="object-cover"
                 />
               </div>
