@@ -64,6 +64,7 @@ export default function Navbar() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search tiles, sanitaryware..."
+              aria-label="Search tiles, sanitaryware"
               className="w-52 rounded-full border border-stone-200 bg-stone-50 py-2 pl-9 pr-3 text-xs outline-none transition focus:border-[#b49663] dark:border-stone-800 dark:bg-stone-900 dark:text-white dark:focus:border-[#c5a059]"
             />
           </form>
@@ -184,6 +185,7 @@ export default function Navbar() {
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search products, brands and finishes"
+            aria-label="Search products, brands and finishes"
             className="h-9 w-full rounded-md border border-stone-200 bg-stone-50 py-2 pl-9 pr-3 text-xs text-stone-900 outline-none focus:border-[#b49663] dark:border-stone-700 dark:bg-stone-900 dark:text-white"
           />
         </form>

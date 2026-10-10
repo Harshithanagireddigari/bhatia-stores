@@ -40,7 +40,36 @@ export async function POST(req: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Directly save to local filesystem in public/uploads/
+    // If Cloudinary is configured, prioritize CDN upload for high performance
+    if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
+      try {
+        const { default: cloudinary } = await import("@/lib/cloudinary");
+        const uploadResult = await new Promise<{ secure_url: string; public_id: string }>((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            {
+              folder: `bhatia-stores/${assetType || "general"}`,
+              resource_type: isVideo ? "video" : "image",
+              transformation: isVideo ? undefined : [{ quality: "auto:good", fetch_format: "auto" }],
+            },
+            (error, result) => {
+              if (error || !result) reject(error || new Error("Cloudinary upload failed"));
+              else resolve(result);
+            }
+          );
+          stream.end(buffer);
+        });
+
+        return NextResponse.json({
+          imageUrl: uploadResult.secure_url,
+          imagePublicId: uploadResult.public_id,
+          mediaType: isVideo ? "video" : "image",
+        });
+      } catch (cloudErr) {
+        console.warn("Cloudinary upload error, checking filesystem fallback:", cloudErr);
+      }
+    }
+
+    // Local filesystem storage fallback for local development
     try {
       const uploadDir = path.join(process.cwd(), "public", "uploads");
       if (!fs.existsSync(uploadDir)) {
@@ -59,15 +88,11 @@ export async function POST(req: NextRequest) {
         mediaType: isVideo ? "video" : "image",
       });
     } catch (fsErr) {
-      console.warn("Filesystem write failed, using data URL fallback:", fsErr);
-      const base64 = buffer.toString("base64");
-      const imageUrl = `data:${file.type};base64,${base64}`;
-
-      return NextResponse.json({
-        imageUrl,
-        imagePublicId: null,
-        mediaType: isVideo ? "video" : "image",
-      });
+      console.error("Storage failed:", fsErr);
+      return NextResponse.json(
+        { error: "Image storage unavailable. Please check cloud storage credentials." },
+        { status: 500 }
+      );
     }
   } catch (error) {
     console.error("Upload handler error:", error);

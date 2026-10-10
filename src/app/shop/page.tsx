@@ -52,28 +52,30 @@ function ShopContent() {
   useEffect(() => {
     async function fetchCategories() {
       try {
-        const [categoryResponse, productResponse] = await Promise.all([
-          fetch("/api/categories"),
-          fetch("/api/products"),
-        ]);
+        const categoryResponse = await fetch("/api/categories");
         const storedCategories = categoryResponse.ok ? await categoryResponse.json() : [];
+        if (Array.isArray(storedCategories) && storedCategories.length > 0) {
+          setCategories(
+            storedCategories.map((item: ShopCategory) => ({
+              name: item.name,
+              productCount: Number(item.productCount) || 0,
+            }))
+          );
+          return;
+        }
+
+        const productResponse = await fetch("/api/products");
         const catalog = productResponse.ok ? await productResponse.json() : [];
-        const categoriesWithCounts =
-          Array.isArray(storedCategories) && storedCategories.length
-            ? storedCategories.map((item: ShopCategory) => ({
-                name: item.name,
-                productCount: Number(item.productCount) || 0,
-              }))
-            : Array.from(
-                new Set(
-                  Array.isArray(catalog)
-                    ? catalog.map((item: Product) => item.category).filter(Boolean)
-                    : []
-                )
-              ).map((name) => ({
-                name,
-                productCount: catalog.filter((item: Product) => item.category === name).length,
-              }));
+        const categoriesWithCounts = Array.from(
+          new Set(
+            Array.isArray(catalog)
+              ? catalog.map((item: Product) => item.category).filter(Boolean)
+              : []
+          )
+        ).map((name) => ({
+          name,
+          productCount: catalog.filter((item: Product) => item.category === name).length,
+        }));
         setCategories(categoriesWithCounts);
       } catch {
         setCategories([]);

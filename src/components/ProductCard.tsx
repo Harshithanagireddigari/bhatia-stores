@@ -44,6 +44,8 @@ export default function ProductCard({ product }: Props) {
               src={product.image}
               alt={product.name}
               fill
+              sizes="(max-width: 639px) 48vw, (max-width: 1023px) 33vw, 25vw"
+              loading="lazy"
               className="object-cover transition-transform duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1)] group-hover:scale-105"
             />
           </Link>

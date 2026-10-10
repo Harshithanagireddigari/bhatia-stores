@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { CartProvider } from "@/components/CartContext";
@@ -14,6 +14,16 @@ const inter = Inter({
   variable: "--font-body",
   display: "swap",
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#faf9f6" },
+    { media: "(prefers-color-scheme: dark)", color: "#12100e" },
+  ],
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://bhatia-stores.vercel.app"),
@@ -43,6 +53,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       className={inter.variable}
       suppressHydrationWarning
     >
+      <head>
+        <meta charSet="utf-8" />
+      </head>
       <body className="bg-[#f8f6f1] text-stone-900 antialiased transition-colors dark:bg-[#12100e] dark:text-stone-100 font-sans">
         <ThemeProvider>
           <CartProvider>

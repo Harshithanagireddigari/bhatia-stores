@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { ChevronDown, MessageCircle, ShieldCheck, ShoppingBag, Star, Truck } from "lucide-react";
 
 export type HeroSlide = {
@@ -73,10 +74,10 @@ export default function Hero({ slides = [] }: { slides?: HeroSlide[] }) {
         </div>
 
         <div className="flex flex-wrap gap-3 pt-2 sm:gap-4">
-          <a href="/shop" className="inline-flex items-center gap-2 rounded-lg bg-[#c5a059] px-4 py-2.5 text-xs font-bold text-stone-900 shadow-xl transition hover:bg-[#b49663] sm:rounded-2xl sm:px-7 sm:py-3.5">
+          <Link href="/shop" className="inline-flex items-center gap-2 rounded-lg bg-[#c5a059] px-4 py-2.5 text-xs font-bold text-stone-900 shadow-xl transition hover:bg-[#b49663] sm:rounded-2xl sm:px-7 sm:py-3.5">
             <ShoppingBag size={17} />
             <span>Explore Collection</span>
-          </a>
+          </Link>
           <a href="https://wa.me/919120435950" className="hidden items-center gap-2 rounded-2xl border border-white/25 bg-black/40 px-6 py-3.5 text-xs font-bold text-white backdrop-blur-md transition hover:bg-white/10 sm:inline-flex">
             <MessageCircle size={17} className="text-[#c5a059]" />
             <span>WhatsApp Consultation</span>

@@ -9,7 +9,13 @@ import Hero from "@/components/Hero";
 import DeferredOffersSection from "@/components/DeferredOffersSection";
 import AnimatedCategorySection from "@/components/AnimatedCategorySection";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
+
+const isCleanImageUrl = (url: unknown): url is string =>
+  typeof url === "string" &&
+  url.trim().length > 0 &&
+  !url.startsWith("data:") &&
+  !url.includes("broken");
 
 const getHomePageData = unstable_cache(
   () => Promise.all([
@@ -54,7 +60,7 @@ export default async function HomePage() {
     return emptyHomePageData;
   });
 
-  const productImages = latestProducts.map((product) => product.image).filter((img): img is string => typeof img === "string" && img.trim().length > 0);
+  const productImages = latestProducts.map((product) => product.image).filter(isCleanImageUrl);
 
   const fallbackCategoryImages: Record<string, string> = {
     "floor-tiles": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=800&auto=format&fit=crop",
@@ -74,7 +80,7 @@ export default async function HomePage() {
         name: cat.name,
         subtitle: cat.description || `Explore ${cat.name}`,
         slug: cat.slug,
-        image: cat.image || fallbackCategoryImages[cat.slug] || productImages[idx % productImages.length] || "",
+        image: (isCleanImageUrl(cat.image) ? cat.image : null) || fallbackCategoryImages[cat.slug] || productImages[idx % productImages.length] || "",
       }))
     : defaultCategories.map((def, idx) => ({
         id: def.slug,

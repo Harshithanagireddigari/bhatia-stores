@@ -44,7 +44,7 @@ export default function AIChatbot() {
       } else if (lower.includes("offer") || lower.includes("coupon") || lower.includes("discount")) {
         aiText = "🎉 Current active offers: Use WELCOME10 for 10% OFF on your first order (min. ₹2,000), or BATH500 for ₹500 OFF on bathroom tiles!";
       } else if (lower.includes("human") || lower.includes("support") || lower.includes("call")) {
-        aiText = "You can talk to our hardware support team on WhatsApp at +91 98765 43210 or email us at support@bhatias.com!";
+        aiText = "You can talk to our hardware support team on WhatsApp at +91 91204 35950 or email us at bhatiasanitaryware@gmail.com!";
       }
 
       const aiMsg: Message = { id: `ai_${Date.now()}`, sender: "ai", text: aiText };

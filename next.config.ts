@@ -5,12 +5,12 @@ const contentSecurityPolicy = [
   "base-uri 'self'",
   "form-action 'self'",
   "frame-ancestors 'none'",
-  "script-src 'self' 'unsafe-inline' https://checkout.razorpay.com",
+  "script-src 'self' 'unsafe-inline' https://checkout.razorpay.com https://challenges.cloudflare.com",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
-  "connect-src 'self' https://api.razorpay.com",
-  "frame-src https://api.razorpay.com https://checkout.razorpay.com",
+  "connect-src 'self' https://api.razorpay.com https://lumberjack.razorpay.com https://challenges.cloudflare.com https://res.cloudinary.com",
+  "frame-src 'self' https://api.razorpay.com https://checkout.razorpay.com https://challenges.cloudflare.com",
   "media-src 'self' https://res.cloudinary.com https://assets.mixkit.co",
   "object-src 'none'",
 ].join("; ");
@@ -26,6 +26,9 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  poweredByHeader: false,
+  compress: true,
+  productionBrowserSourceMaps: false,
   images: {
     formats: ["image/avif", "image/webp"],
     deviceSizes: [360, 640, 750, 828, 1080, 1200, 1920],
