@@ -18,12 +18,30 @@ interface Product {
   description: string;
   price: string;
   image: string;
+  images?: string[] | null;
   category: string;
   stock: number;
 }
 
 function isProductImage(image: string) {
   return image.startsWith("/") || image.startsWith("http") || image.startsWith("data:image/");
+}
+
+function getProductGallery(product: Product): string[] {
+  if (Array.isArray(product.images) && product.images.length > 0) {
+    return product.images;
+  }
+  if (
+    product.image.includes("step-riser-01") ||
+    product.name.toLowerCase().includes("step & riser tile - design 01")
+  ) {
+    return [
+      "/step-riser/1_steps_scene.png",
+      "/step-riser/2_sr1157_tile.png",
+      "/step-riser/3_step_details_specs.png",
+    ];
+  }
+  return [product.image];
 }
 
 export default function ProductPage({
@@ -136,7 +154,7 @@ export default function ProductPage({
             <ProductImageZoom
               src={product.image}
               alt={product.name}
-              galleryImages={[product.image]}
+              galleryImages={getProductGallery(product)}
             />
           ) : (
             <div className="flex min-h-[24rem] items-center justify-center">

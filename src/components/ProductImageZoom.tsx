@@ -261,24 +261,39 @@ export default function ProductImageZoom({ src, alt, galleryImages }: ProductIma
       {/* THUMBNAIL SELECTOR BAR */}
       {allImages.length > 1 && (
         <div className="flex items-center gap-3 overflow-x-auto pb-1 pt-1 scrollbar-none">
-          {allImages.map((img, idx) => (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => setActiveIndex(idx)}
-              className={`relative aspect-square h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl border-2 transition-all duration-200 ${
-                activeIndex === idx
-                  ? "border-amber-500 shadow-md ring-2 ring-amber-500/30 dark:border-amber-400"
-                  : "border-stone-200 opacity-70 hover:opacity-100 dark:border-stone-700"
-              }`}
-            >
-              <img
-                src={img}
-                alt={`${alt} thumbnail ${idx + 1}`}
-                className="h-full w-full object-cover"
-              />
-            </button>
-          ))}
+          {allImages.map((img, idx) => {
+            const label =
+              idx === 0
+                ? "1. Scene View"
+                : idx === 1
+                ? "2. Product Piece"
+                : idx === 2
+                ? "3. Dimensions"
+                : `View ${idx + 1}`;
+            return (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => setActiveIndex(idx)}
+                className={`group relative flex flex-col items-center gap-1 rounded-xl p-1.5 transition-all duration-200 ${
+                  activeIndex === idx
+                    ? "ring-2 ring-amber-500 bg-amber-50 dark:bg-amber-950/30 dark:ring-amber-400"
+                    : "opacity-75 hover:opacity-100"
+                }`}
+              >
+                <div className="relative aspect-square h-16 w-16 overflow-hidden rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800">
+                  <img
+                    src={img}
+                    alt={`${alt} ${label}`}
+                    className="h-full w-full object-contain p-0.5"
+                  />
+                </div>
+                <span className="text-[10px] font-bold text-stone-700 dark:text-stone-300">
+                  {label}
+                </span>
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -294,7 +309,14 @@ export default function ProductImageZoom({ src, alt, galleryImages }: ProductIma
           <div className="absolute top-4 left-4 right-4 z-50 flex items-center justify-between text-white">
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold tracking-wide text-stone-300">
-                {activeIndex + 1} / {allImages.length}
+                {activeIndex === 0
+                  ? "1. Scene View"
+                  : activeIndex === 1
+                  ? "2. Product Piece"
+                  : activeIndex === 2
+                  ? "3. Dimensions & Specifications"
+                  : `View ${activeIndex + 1}`}{" "}
+                ({activeIndex + 1} / {allImages.length})
               </span>
               <span className="hidden sm:inline text-xs text-stone-400">| Use mouse wheel or controls to zoom</span>
             </div>
