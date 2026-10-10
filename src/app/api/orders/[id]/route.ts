@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { orders, orderItems } from "@/db/schema";
+import { orders, orderItems, deliveryAssignments } from "@/db/schema";
 import { getSessionUser } from "@/lib/auth";
 import { eq } from "drizzle-orm";
 import { sendCustomerOrderWhatsAppSMS } from "@/lib/whatsapp-sms";
@@ -27,7 +27,19 @@ export async function GET(
 
   const items = await db.select().from(orderItems).where(eq(orderItems.orderId, id));
 
-  return NextResponse.json({ ...order[0], items });
+  // Fetch delivery assignment if exists
+  const asgns = await db
+    .select({
+      deliveryOtp: deliveryAssignments.deliveryOtp,
+      currentStatus: deliveryAssignments.currentStatus,
+    })
+    .from(deliveryAssignments)
+    .where(eq(deliveryAssignments.orderId, id))
+    .limit(1);
+
+  const deliveryOtp = asgns[0]?.deliveryOtp || null;
+
+  return NextResponse.json({ ...order[0], items, deliveryOtp });
 }
 
 export async function PATCH(

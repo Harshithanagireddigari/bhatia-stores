@@ -83,7 +83,7 @@ export default function AdminMessagesPage() {
   return (
     <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900 font-sans">
       <Sidebar />
-      <div className="ml-64 flex-1">
+      <div className="ml-0 md:ml-64 flex-1 pb-20 md:pb-0 min-w-0">
         <Header />
         <main className="p-6 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

@@ -11,7 +11,7 @@ import { Heart, Menu, Moon, Package, Search, ShoppingBag, ShoppingCart, Sun, Use
 export default function Navbar() {
   const { itemCount } = useCart();
   const router = useRouter();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, resolvedTheme } = useTheme();
 
   const [search, setSearch] = useState("");
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -20,6 +20,11 @@ export default function Navbar() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const isDark = mounted ? (resolvedTheme === "dark" || theme === "dark") : false;
+  const toggleTheme = () => {
+    setTheme(isDark ? "light" : "dark");
+  };
 
   function submitSearch(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -38,9 +43,9 @@ export default function Navbar() {
         {/* LOGO (GOLD BRANDING WITH OFFICIAL LOGO IMAGE) */}
         <Link
           href="/"
-          className="font-serif text-xl sm:text-2xl font-bold tracking-tight text-[#b49663] dark:text-[#c5a059] transition hover:opacity-90 flex items-center gap-2.5"
+          className="font-serif text-xl sm:text-2xl font-bold tracking-tight text-[#745624] dark:text-[#e2bd72] transition hover:opacity-90 flex items-center gap-2.5"
         >
-          <div className="relative h-9 w-9 overflow-hidden rounded-full border border-[#c5a059]/40 shadow-sm shrink-0">
+          <div className="relative h-9 w-9 overflow-hidden rounded-full border border-[#745624]/40 dark:border-[#e2bd72]/40 shadow-sm shrink-0">
             <Image
               src="/logo.png"
               alt="Bhatia Stores Logo"
@@ -117,12 +122,12 @@ export default function Navbar() {
           {/* Theme Toggle Button */}
           {mounted && (
             <button
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              onClick={toggleTheme}
               className="rounded-full p-2 text-stone-600 dark:text-stone-300 transition hover:bg-stone-100 dark:hover:bg-stone-800"
               aria-label="Toggle Theme"
-              title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+              title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
             >
-              {theme === "dark" ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} />}
+              {isDark ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} />}
             </button>
           )}
         </div>
@@ -153,6 +158,17 @@ export default function Navbar() {
           </Link>
 
           <div className="flex items-center gap-0.5">
+            {mounted && (
+              <button
+                type="button"
+                onClick={toggleTheme}
+                aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+                className="flex h-10 w-9 items-center justify-center rounded-lg text-stone-700 transition hover:bg-stone-100 dark:text-stone-200 dark:hover:bg-stone-800"
+                title={isDark ? "Light mode" : "Dark mode"}
+              >
+                {isDark ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} />}
+              </button>
+            )}
             <Link
               href="/wishlist"
               aria-label="Wishlist"
@@ -264,11 +280,12 @@ export default function Navbar() {
             </Link>
             {mounted && (
               <button
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                type="button"
+                onClick={toggleTheme}
                 className="flex items-center gap-3 rounded-lg px-3 py-3 text-left text-xs font-bold text-stone-800 hover:bg-stone-100 dark:text-stone-200 dark:hover:bg-stone-800"
               >
-                {theme === "dark" ? <Sun size={17} className="text-[#c5a059]" /> : <Moon size={17} className="text-[#b49663]" />}
-                <span>{theme === "dark" ? "Light appearance" : "Dark appearance"}</span>
+                {isDark ? <Sun size={17} className="text-[#c5a059]" /> : <Moon size={17} className="text-[#b49663]" />}
+                <span>{isDark ? "Light appearance" : "Dark appearance"}</span>
               </button>
             )}
           </div>

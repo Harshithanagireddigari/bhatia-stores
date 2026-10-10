@@ -19,7 +19,8 @@ import {
   X,
   FileCheck,
   Building2,
-  Award
+  Award,
+  Send
 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -177,6 +178,34 @@ export default function DeliveryAgentsPortal() {
       toast.error("Proof photo upload failed");
     } finally {
       setUploadingProof(false);
+    }
+  }
+
+  const [sendingOtpId, setSendingOtpId] = useState<string | null>(null);
+
+  async function handleSendOtp(item: DeliveryItem) {
+    setSendingOtpId(item.assignmentId);
+    try {
+      const res = await fetch("/api/delivery-agents/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: item.orderId,
+          assignmentId: item.assignmentId,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to send OTP");
+
+      toast.success(`OTP ${data.otp} sent to customer ${item.customerName}!`);
+
+      if (data.whatsappLink) {
+        window.open(data.whatsappLink, "_blank", "noopener,noreferrer");
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to send OTP");
+    } finally {
+      setSendingOtpId(null);
     }
   }
 
@@ -393,6 +422,15 @@ export default function DeliveryAgentsPortal() {
                             ₹{Number(item.total).toLocaleString("en-IN")}
                           </span>
                           <div className="flex items-center justify-end gap-2 mt-1">
+                            <button
+                              type="button"
+                              onClick={() => handleSendOtp(item)}
+                              disabled={sendingOtpId === item.assignmentId}
+                              className="inline-flex items-center gap-1 rounded-lg bg-amber-100 px-2.5 py-1 text-[11px] font-bold text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 hover:bg-amber-200 transition"
+                            >
+                              <KeyRound size={13} />
+                              <span>{sendingOtpId === item.assignmentId ? "Sending..." : "Send OTP"}</span>
+                            </button>
                             <a
                               href={`https://wa.me/91${item.phone.replace(/[^0-9]/g, "")}`}
                               target="_blank"
@@ -491,7 +529,7 @@ export default function DeliveryAgentsPortal() {
                               className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-5 py-2.5 text-xs font-extrabold text-white shadow-md hover:bg-emerald-700 transition disabled:opacity-50"
                             >
                               <KeyRound size={15} />
-                              <span>Verify Customer OTP & Deliver (Meesho Style)</span>
+                              <span>Verify Customer OTP & Deliver</span>
                             </button>
                           )}
 
@@ -585,7 +623,7 @@ export default function DeliveryAgentsPortal() {
                   </div>
                   <div className="flex justify-between py-1.5 border-b border-stone-200/60 dark:border-stone-800">
                     <span className="text-stone-500">Verification Protocol:</span>
-                    <span className="font-bold text-stone-900 dark:text-white">Meesho Customer OTP Verification</span>
+                    <span className="font-bold text-stone-900 dark:text-white">Secure Customer OTP Verification</span>
                   </div>
                   <div className="flex justify-between py-1.5 border-b border-stone-200/60 dark:border-stone-800">
                     <span className="text-stone-500">Assigned Delivery Region:</span>
@@ -597,7 +635,7 @@ export default function DeliveryAgentsPortal() {
           </div>
         )}
 
-        {/* MEESHO-STYLE CUSTOMER DELIVERY OTP MODAL */}
+        {/* SECURE CUSTOMER DELIVERY OTP MODAL */}
         {otpModalItem && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
             <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl border border-stone-200 dark:border-stone-800 dark:bg-stone-900 space-y-5 animate-in fade-in zoom-in-95">
@@ -610,7 +648,7 @@ export default function DeliveryAgentsPortal() {
                     <h3 className="font-serif text-lg font-bold text-stone-900 dark:text-white">
                       Customer Delivery OTP
                     </h3>
-                    <p className="text-[11px] text-stone-500">Meesho-style Delivery Verification</p>
+                    <p className="text-[11px] text-stone-500">Secure Delivery Verification</p>
                   </div>
                 </div>
                 <button
@@ -641,6 +679,24 @@ export default function DeliveryAgentsPortal() {
                 </div>
               </div>
 
+              {/* Send / Resend OTP Action */}
+              <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-3 text-xs dark:border-amber-900/40 dark:bg-amber-950/20">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] text-stone-600 dark:text-stone-400">
+                    Customer hasn't received code yet?
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleSendOtp(otpModalItem)}
+                    disabled={sendingOtpId === otpModalItem.assignmentId}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-amber-700 transition disabled:opacity-50"
+                  >
+                    <Send size={12} />
+                    <span>{sendingOtpId === otpModalItem.assignmentId ? "Sending..." : "Send OTP to Customer"}</span>
+                  </button>
+                </div>
+              </div>
+
               {/* OTP Input Form */}
               <div className="space-y-3">
                 <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 dark:text-stone-300">
@@ -653,12 +709,12 @@ export default function DeliveryAgentsPortal() {
                     maxLength={6}
                     value={inputOtp}
                     onChange={(e) => setInputOtp(e.target.value.replace(/[^0-9]/g, ""))}
-                    placeholder="e.g. 4892"
-                    className="w-full rounded-2xl border-2 border-[#b49663] bg-stone-50 py-3.5 pl-11 pr-4 text-center font-mono text-xl font-extrabold tracking-widest text-stone-900 outline-none focus:bg-white dark:bg-stone-950 dark:text-white"
+                    placeholder="••••"
+                    className="w-full rounded-2xl border-2 border-[#b49663] bg-stone-50 py-3.5 pl-11 pr-4 text-center font-mono text-2xl font-extrabold tracking-[0.3em] text-stone-900 outline-none focus:bg-white dark:bg-stone-950 dark:text-white"
                   />
                 </div>
                 <p className="text-[11px] text-stone-500 dark:text-stone-400 italic">
-                  💡 Ask customer <strong>{otpModalItem.customerName}</strong> for the 4-digit Delivery OTP displayed on their order screen or SMS.
+                  💡 Ask customer <strong>{otpModalItem.customerName}</strong> for the 4-digit code shown on their order tracking page or sent via WhatsApp/SMS.
                 </p>
               </div>
 

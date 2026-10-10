@@ -39,7 +39,7 @@ export default function AdminCustomersPage() {
   return (
     <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900 font-sans">
       <Sidebar />
-      <div className="ml-64 flex-1">
+      <div className="ml-0 md:ml-64 flex-1 pb-20 md:pb-0 min-w-0">
         <Header />
         <main className="p-8 max-w-7xl mx-auto">
           {/* Page Header */}

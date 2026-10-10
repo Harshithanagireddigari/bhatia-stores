@@ -19,7 +19,14 @@ export default function MobileBottomNav() {
   const pathname = usePathname();
   const { itemCount } = useCart();
 
-  if (!pathname || authPaths.includes(pathname)) return null;
+  if (
+    !pathname ||
+    authPaths.includes(pathname) ||
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/delivery-agents")
+  ) {
+    return null;
+  }
 
   return (
     <nav

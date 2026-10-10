@@ -37,6 +37,7 @@ interface Order {
   shiprocketAwbCode?: string | null;
   courierName?: string | null;
   trackingUrl?: string | null;
+  deliveryOtp?: string | null;
   deliveredAt?: string | null;
   createdAt: string;
   items: OrderItem[];
@@ -202,6 +203,31 @@ export default function OrderDetailPage({
           ₹{parseFloat(order.total).toFixed(2)}
         </span>
       </div>
+
+      {/* Real Customer Delivery OTP Card */}
+      {order.deliveryOtp && order.status !== "delivered" && (
+        <div className="mt-4 overflow-hidden rounded-2xl border-2 border-emerald-500 bg-gradient-to-r from-emerald-50 to-teal-50 p-5 shadow-sm dark:border-emerald-500/50 dark:from-emerald-950/30 dark:to-teal-950/30">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-extrabold text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200">
+                🔒 Delivery Verification Code
+              </span>
+              <h2 className="mt-2 text-base font-bold text-stone-900 dark:text-white">
+                Share this OTP with your delivery agent upon arrival
+              </h2>
+              <p className="text-xs text-stone-600 dark:text-stone-300 mt-0.5">
+                Keep this code handy. Do not share until your order is physically handed over to you.
+              </p>
+            </div>
+            <div className="flex flex-col items-center justify-center bg-white dark:bg-stone-900 px-6 py-3 rounded-2xl border border-emerald-200 dark:border-emerald-800 shadow-sm shrink-0">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Your 4-Digit OTP</span>
+              <span className="font-mono text-3xl font-black tracking-[0.25em] text-emerald-600 dark:text-emerald-400 mt-1">
+                {order.deliveryOtp}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 14-Day Return / Exchange Alert Banner */}
       {isDelivered && (

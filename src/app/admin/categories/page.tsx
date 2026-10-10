@@ -86,7 +86,7 @@ export default function AdminCategoriesPage() {
     }
   }
 
-  return <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900"><Sidebar /><div className="ml-64 flex-1"><Header /><main className="p-6">
+  return <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900"><Sidebar /><div className="ml-0 md:ml-64 flex-1 pb-20 md:pb-0 min-w-0"><Header /><main className="p-6">
     <div className="mb-6 flex flex-wrap items-end justify-between gap-4"><div><h1 className="text-2xl font-bold text-gray-900 dark:text-white">Categories</h1><p className="text-sm text-gray-500 dark:text-gray-400">Manage your store categories and exact display order.</p></div><button onClick={openCreate} className="inline-flex items-center gap-2 rounded-full bg-[#4f46e5] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#4338ca]"><Plus size={17} /> Add Category</button></div>
 
     {showForm && <section className="mb-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800"><div className="flex items-center justify-between gap-4"><div><h2 className="text-lg font-semibold text-gray-900 dark:text-white">{editing ? "Edit category" : "New category"}</h2><p className="text-sm text-gray-500">Control its image, visibility, and display placement.</p></div><button type="button" onClick={closeForm} className="text-sm font-semibold text-gray-600 hover:text-gray-900 dark:text-gray-300">Cancel</button></div><form onSubmit={saveCategory} className="mt-6 grid gap-6 lg:grid-cols-[220px_1fr]">

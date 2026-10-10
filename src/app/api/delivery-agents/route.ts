@@ -39,21 +39,7 @@ export async function GET(req: Request) {
     }
 
     // Admin view: Fetch all delivery agents
-    let agents = await db.select().from(deliveryAgents).orderBy(desc(deliveryAgents.createdAt));
-
-    // Auto seed default agent if empty so portal is immediately functional
-    if (agents.length === 0) {
-      const defaultAgent = {
-        id: "agnt_default",
-        name: "Rahul Verma (Field Agent)",
-        phone: "9876543210",
-        email: "rahul.verma@bhatia.com",
-        vehicleNumber: "DL 01 AB 1234",
-        status: "active",
-      };
-      await db.insert(deliveryAgents).values(defaultAgent);
-      agents = [defaultAgent as any];
-    }
+    const agents = await db.select().from(deliveryAgents).orderBy(desc(deliveryAgents.createdAt));
 
     return NextResponse.json(Array.isArray(agents) ? agents : []);
   } catch (error) {
@@ -109,5 +95,22 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error("Delivery agents API error:", error);
     return NextResponse.json({ error: "Operation failed" }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+    if (!id) {
+      return NextResponse.json({ error: "Agent ID is required" }, { status: 400 });
+    }
+
+    await db.delete(deliveryAssignments).where(eq(deliveryAssignments.agentId, id));
+    await db.delete(deliveryAgents).where(eq(deliveryAgents.id, id));
+    return NextResponse.json({ success: true, message: "Delivery agent removed" });
+  } catch (error) {
+    console.error("Delete agent error:", error);
+    return NextResponse.json({ error: "Failed to delete agent" }, { status: 500 });
   }
 }

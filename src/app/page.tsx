@@ -63,14 +63,14 @@ export default async function HomePage() {
   const productImages = latestProducts.map((product) => product.image).filter(isCleanImageUrl);
 
   const fallbackCategoryImages: Record<string, string> = {
-    "floor-tiles": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=800&auto=format&fit=crop",
-    "wall-tiles": "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&w=800&auto=format&fit=crop",
-    "bathroom-tiles": "https://images.unsplash.com/photo-1620626011761-996317b8d101?q=80&w=800&auto=format&fit=crop",
-    "sanitaryware": "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&w=800&auto=format&fit=crop",
-    "faucets-taps": "https://images.unsplash.com/photo-1585758925574-d4bfa55eb5db?q=80&w=800&auto=format&fit=crop",
-    "wash-basins": "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&w=800&auto=format&fit=crop",
-    "toilets-wc": "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&w=800&auto=format&fit=crop",
-    "bathroom-accessories": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=800&auto=format&fit=crop",
+    "floor-tiles": "/products/catalog/suncore-matt-01.jpg",
+    "wall-tiles": "/products/catalog/gnam-wall-01.jpg",
+    "bathroom-tiles": "/products/catalog/suncore-dc-01.jpg",
+    "sanitaryware": "/products/catalog/hindware-01.jpg",
+    "faucets-taps": "/products/catalog/hindware-05.jpg",
+    "wash-basins": "/products/catalog/hindware-08.jpg",
+    "toilets-wc": "/products/catalog/hindware-02.jpg",
+    "bathroom-accessories": "/products/catalog/bhatia-catalogue-01.jpg",
   };
 
   // Use database categories if defined, otherwise fallback to defaults
@@ -105,10 +105,10 @@ export default async function HomePage() {
         <div className="mx-auto max-w-7xl">
           <div className="mb-5 flex items-end justify-between gap-4 sm:mb-10 sm:gap-6">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[.2em] text-[#a08b68]">Fresh from showroom</p>
+              <p className="text-xs font-bold uppercase tracking-[.2em] text-[#745624] dark:text-[#d4af37]">Fresh from showroom</p>
               <h2 className="mt-1 font-serif text-2xl text-[#2c241d] sm:mt-2 md:text-4xl dark:text-white">Featured Pieces</h2>
             </div>
-            <Link href="/shop" className="text-sm font-semibold text-[#6b4f2c] hover:underline dark:text-[#e2bd72]">
+            <Link href="/shop" className="text-sm font-semibold text-[#745624] hover:underline dark:text-[#e2bd72]">
               Shop all →
             </Link>
           </div>
@@ -131,13 +131,13 @@ export default async function HomePage() {
                   />
                 </div>
                 <div className="px-1 pb-2 pt-3">
-                  <p className="text-[10px] font-bold uppercase tracking-[.14em] text-stone-500 dark:text-stone-400">
+                  <p className="text-[10px] font-bold uppercase tracking-[.14em] text-stone-600 dark:text-stone-400">
                     {product.category}
                   </p>
                   <h3 className="mt-1 font-serif text-sm font-semibold text-[#2c241d] sm:text-lg dark:text-white line-clamp-2">
                     {product.name}
                   </h3>
-                  <p className="mt-2 text-sm font-bold text-[#b49663]">
+                  <p className="mt-2 text-sm font-bold text-[#745624] dark:text-[#d4af37]">
                     ₹{Number(product.price).toLocaleString("en-IN")}
                   </p>
                 </div>
