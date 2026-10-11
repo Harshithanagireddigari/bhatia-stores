@@ -3,8 +3,7 @@ import { MetadataRoute } from "next";
 import { db } from "@/db";
 import { products } from "@/db/schema";
 
-const baseUrl = "https://bhatia-stores.vercel.app";
-
+const baseUrl = "https://www.bhatiastores.com";
 const getProductPages = unstable_cache(
   () => db.select({ id: products.id, createdAt: products.createdAt }).from(products),
   ["sitemap-products"],
