@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createUser, getUserByEmail, setSessionCookie, verifyPassword } from "@/lib/auth";
+import { createUser, getUserByEmail, setSessionCookie, verifyPassword, isUserRestricted } from "@/lib/auth";
 
 export async function POST(req: Request) {
   try {
@@ -12,7 +12,20 @@ export async function POST(req: Request) {
     const cleanPassword = String(password).trim();
     const cleanName = String(name || cleanEmail.split("@")[0]).trim();
 
+    if (await isUserRestricted(cleanEmail)) {
+      return NextResponse.json(
+        { error: "Your access has been restricted by the store administrator. Please contact support." },
+        { status: 403 }
+      );
+    }
+
     let user = await getUserByEmail(cleanEmail);
+    if (user && user.role !== "admin" && (await isUserRestricted(user.id))) {
+      return NextResponse.json(
+        { error: "Your access has been restricted by the store administrator. Please contact support." },
+        { status: 403 }
+      );
+    }
     if (user) {
       // Verify password if user exists
       const isValid = await verifyPassword(cleanPassword, user.password);

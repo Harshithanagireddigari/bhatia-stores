@@ -26,10 +26,9 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://bhatia-stores.vercel.app"),
+  metadataBase: new URL("https://www.bhatiastores.com"),
   title: { default: "Bhatia Stores | Premium Hardware & Sanitaryware", template: "%s | Bhatia Stores" },
   description: "Shop premium tiles, sanitaryware, faucets, fittings, and hardware with reliable delivery across India.",
-  alternates: { canonical: "/" },
   robots: { index: true, follow: true },
   openGraph: {
     type: "website",
@@ -55,6 +54,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     >
       <head>
         <meta charSet="utf-8" />
+        <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://res.cloudinary.com" />
       </head>
       <body className="bg-[#f8f6f1] text-stone-900 antialiased transition-colors dark:bg-[#12100e] dark:text-stone-100 font-sans">
         <ThemeProvider>

@@ -151,7 +151,7 @@ export default function Navbar() {
             </div>
             <span className="min-w-0 text-left font-serif leading-none">
               <span className="block truncate text-sm font-bold">The Bhatias</span>
-              <span className="mt-1 block truncate text-[7px] font-bold uppercase tracking-[0.16em] text-[#9a7542]">
+              <span className="mt-1 block truncate text-[7px] font-bold uppercase tracking-[0.16em] text-[#5c431b] dark:text-[#f0d48f]">
                 Premium hardware store
               </span>
             </span>

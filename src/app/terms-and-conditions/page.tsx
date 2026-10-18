@@ -92,7 +92,7 @@ export default function TermsAndConditionsPage() {
               <br />
               <strong>Support Phone / WhatsApp:</strong> +91 9120435950
               <br />
-              <strong>Support Email:</strong> bhatiasanitaryware@gmail.com
+              <strong>Support Email:</strong> info@bhatiastores.com
             </p>
           </section>
 

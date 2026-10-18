@@ -1,5 +1,11 @@
+import type { Metadata } from "next";
 import { getSessionUser } from "@/lib/auth";
 import AdminLoginPortal from "@/components/admin/AdminLoginPortal";
+
+export const metadata: Metadata = {
+  title: "Admin Portal",
+  robots: { index: false, follow: false },
+};
 
 export default async function AdminLayout({
   children,

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { orders, orderItems, paymentOrders, storeSettings, offers, products } from "@/db/schema";
-import { getSessionUser } from "@/lib/auth";
+import { getSessionUser, isUserRestricted } from "@/lib/auth";
 import { v4 as uuidv4 } from "uuid";
 import { and, eq, gt, gte, inArray, isNull, or } from "drizzle-orm";
 import { createHmac, timingSafeEqual } from "node:crypto";
@@ -52,6 +52,16 @@ export async function POST(req: Request) {
       razorpaySignature,
       couponCode,
     } = await req.json();
+
+    if (user.role !== "admin") {
+      const restricted = (await isUserRestricted(customerEmail)) || (await isUserRestricted(user.id)) || (await isUserRestricted(user.email));
+      if (restricted) {
+        return NextResponse.json(
+          { error: "Your account is restricted from placing orders. Please contact support." },
+          { status: 403 }
+        );
+      }
+    }
 
     if (!Array.isArray(items) || !items.length || !customerName || !customerEmail || !address || !phone) {
       return NextResponse.json({ error: "All fields are required" }, { status: 400 });
@@ -219,17 +229,21 @@ export async function POST(req: Request) {
     const created = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
 
     // 1. Email notifications to customer & store owner
-    void sendOrderNotifications({
-      id: orderId,
-      customerName,
-      customerEmail,
-      total: finalTotal.toString(),
-      paymentMethod,
-      address,
-      city: city || "",
-      phone,
-      items: verifiedItems.map(({ product, quantity }) => ({ productName: product.name, quantity, price: product.price })),
-    }).catch((error) => console.error("Order notification error:", error));
+    try {
+      await sendOrderNotifications({
+        id: orderId,
+        customerName,
+        customerEmail,
+        total: finalTotal.toString(),
+        paymentMethod,
+        address,
+        city: city || "",
+        phone,
+        items: verifiedItems.map(({ product, quantity }) => ({ productName: product.name, quantity, price: product.price })),
+      });
+    } catch (error) {
+      console.error("Order notification error:", error);
+    }
 
     // 2. In-App Bell Notification for Admin Dashboard & Admin Email Alert
     void notifyAdmin({
@@ -303,5 +317,30 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error("Create order error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: Request) {
+  const user = await getSessionUser();
+  if (!user || user.role !== "admin") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+  }
+
+  const { searchParams } = new URL(req.url);
+  const status = searchParams.get("status");
+
+  try {
+    if (status === "all") {
+      await db.delete(orders);
+      return NextResponse.json({ success: true, message: "All order history has been deleted." });
+    } else if (status) {
+      await db.delete(orders).where(eq(orders.status, status as any));
+      return NextResponse.json({ success: true, message: `All ${status} orders have been deleted.` });
+    }
+
+    return NextResponse.json({ error: "Missing status parameter (use ?status=all or ?status=cancelled)" }, { status: 400 });
+  } catch (err) {
+    console.error("Delete orders error:", err);
+    return NextResponse.json({ error: "Failed to delete orders" }, { status: 500 });
   }
 }

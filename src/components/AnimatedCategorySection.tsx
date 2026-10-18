@@ -35,14 +35,18 @@ export default function AnimatedCategorySection({ categories }: { categories: Ca
 
       <div className="mt-5 grid grid-cols-2 gap-3 sm:mt-10 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
         {categories.map((category) => {
-          const image = category.image?.trim() && !category.image.includes("broken")
+          const isClean =
+            category.image?.trim() &&
+            !category.image.includes("broken") &&
+            !category.image.includes("photo-1585758925574-d4bfa55eb5db");
+          const image = isClean
             ? category.image
             : defaultFallbacks[category.slug] || defaultFallbacks["floor-tiles"];
 
           return (
             <Link key={category.id} href={`/shop?category=${encodeURIComponent(category.name)}`} className="group relative flex flex-col justify-between overflow-hidden rounded-xl border border-stone-200/90 bg-white p-2.5 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-[#745624] hover:shadow-xl dark:border-stone-800 dark:bg-stone-900 sm:rounded-2xl sm:p-4">
               <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-stone-100 dark:bg-stone-800 sm:aspect-[4/3] sm:rounded-xl">
-                <Image src={image} alt={category.name} fill sizes="(max-width: 639px) 46vw, (max-width: 1023px) 42vw, 22vw" quality={70} className="object-cover transition duration-500 group-hover:scale-105" />
+                <Image src={image} alt={category.name} fill sizes="(max-width: 639px) 46vw, (max-width: 1023px) 42vw, 22vw" quality={70} className="object-cover transition-transform duration-500 group-hover:scale-105" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                 <span className="absolute bottom-3 left-3 translate-y-2 rounded-full bg-black/70 px-3 py-1 text-[11px] font-medium text-white opacity-0 transition duration-300 group-hover:translate-y-0 group-hover:opacity-100">View Collection</span>
               </div>

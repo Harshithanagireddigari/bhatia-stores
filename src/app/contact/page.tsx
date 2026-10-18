@@ -12,7 +12,7 @@ export default function ContactPage() {
   const [form, setForm] = useState({ name: "", email: "", message: "" });
 
   const supportPhone = "+91 91204 35950";
-  const supportEmail = "bhatiasanitaryware@gmail.com";
+  const supportEmail = "info@bhatiastores.com";
 
   async function handleEmailSubmit(e: React.FormEvent) {
     e.preventDefault();

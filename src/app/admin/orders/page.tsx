@@ -4,7 +4,7 @@ import Sidebar from "@/components/admin/Sidebar";
 import Header from "@/components/admin/Header";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 import { getWhatsAppUrl, formatOrderWhatsAppMessage } from "@/lib/whatsapp-sms";
 
 interface Order {
@@ -33,6 +33,8 @@ export default function AdminOrdersPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [pushingShiprocketId, setPushingShiprocketId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [clearing, setClearing] = useState(false);
 
   useEffect(() => {
     fetchOrders();
@@ -109,6 +111,44 @@ export default function AdminOrdersPage() {
     }
   }
 
+  async function deleteOrder(orderId: string) {
+    if (!window.confirm(`Are you sure you want to permanently delete Order #${orderId.slice(0, 8).toUpperCase()}? This cannot be undone.`)) {
+      return;
+    }
+    setDeletingId(orderId);
+    try {
+      const res = await fetch(`/api/orders/${orderId}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to delete order");
+      toast.success(`Order #${orderId.slice(0, 8).toUpperCase()} deleted successfully`);
+      setOrders((prev) => prev.filter((o) => o.id !== orderId));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete order");
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
+  async function clearOrderHistory(status: "all" | "cancelled" = "all") {
+    const confirmMsg = status === "all"
+      ? "⚠️ DANGER: Are you sure you want to PERMANENTLY DELETE ALL ORDER HISTORY? This action cannot be reversed!"
+      : "Are you sure you want to delete all cancelled orders?";
+    if (!window.confirm(confirmMsg)) return;
+
+    setClearing(true);
+    try {
+      const res = await fetch(`/api/orders?status=${status}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to clear order history");
+      toast.success(data.message || "Order history cleared successfully");
+      fetchOrders(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to clear order history");
+    } finally {
+      setClearing(false);
+    }
+  }
+
   const statusColors: Record<string, string> = {
     pending: "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 font-bold",
     confirmed: "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 font-bold",
@@ -123,18 +163,32 @@ export default function AdminOrdersPage() {
       <div className="ml-0 md:ml-64 flex-1 pb-20 md:pb-0 min-w-0">
         <Header />
         <main className="p-8 max-w-7xl mx-auto">
-          <div className="mb-8 flex items-center justify-between">
+          <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
                 Manage Orders
               </h1>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Real-time live customer orders and fulfillment status management.
+                Real-time live customer orders, deletion, and fulfillment status management.
               </p>
             </div>
-            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1.5 rounded-full">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              Live Auto-Sync Active
+            <div className="flex flex-wrap items-center gap-2.5">
+              <div className="flex items-center gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1.5 rounded-full">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                Live Auto-Sync Active
+              </div>
+              {orders.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => clearOrderHistory("all")}
+                  disabled={clearing}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3.5 py-1.5 text-xs font-bold text-red-700 transition hover:bg-red-100 disabled:opacity-50 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-400 dark:hover:bg-red-900/60 shadow-sm"
+                  title="Purge all order history"
+                >
+                  <Trash2 size={13} />
+                  <span>{clearing ? "Clearing..." : "Clear Order History"}</span>
+                </button>
+              )}
             </div>
           </div>
 
@@ -176,7 +230,7 @@ export default function AdminOrdersPage() {
                         })}
                       </p>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3 sm:gap-4">
                       <span className="text-lg font-extrabold text-gray-900 dark:text-white">
                         ₹{parseFloat(order.total).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                       </span>
@@ -187,6 +241,22 @@ export default function AdminOrdersPage() {
                       >
                         {order.status}
                       </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteOrder(order.id);
+                        }}
+                        disabled={deletingId === order.id}
+                        className="rounded-xl p-2 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/50 dark:hover:text-red-400 transition"
+                        title="Delete order permanently"
+                      >
+                        {deletingId === order.id ? (
+                          <Loader2 size={16} className="animate-spin text-red-500" />
+                        ) : (
+                          <Trash2 size={16} />
+                        )}
+                      </button>
                       <svg
                         className={`h-5 w-5 text-gray-400 transition-transform duration-300 ${
                           expandedId === order.id ? "rotate-180" : ""
@@ -303,7 +373,7 @@ export default function AdminOrdersPage() {
                             })}
                           </div>
 
-                          <div className="mt-3">
+                          <div className="mt-3 flex flex-wrap items-center gap-2.5">
                             <a
                               href={getWhatsAppUrl(
                                 order.phone,
@@ -324,6 +394,19 @@ export default function AdminOrdersPage() {
                             >
                               <span>💬 Send WhatsApp Confirmation & Order Details</span>
                             </a>
+                            <button
+                              type="button"
+                              onClick={() => deleteOrder(order.id)}
+                              disabled={deletingId === order.id}
+                              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-400 dark:hover:bg-red-900/60 text-xs font-bold transition shadow-sm disabled:opacity-50"
+                            >
+                              {deletingId === order.id ? (
+                                <Loader2 size={13} className="animate-spin text-red-500" />
+                              ) : (
+                                <Trash2 size={13} />
+                              )}
+                              <span>Delete Order</span>
+                            </button>
                           </div>
                         </div>
                       </div>

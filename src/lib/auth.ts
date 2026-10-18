@@ -1,8 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import bcrypt from "bcryptjs";
 import { db } from "@/db";
-import { users } from "@/db/schema";
-import { sessions } from "@/db/schema";
+import { users, sessions, storeSettings } from "@/db/schema";
 import { and, eq, gt } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { createHmac, timingSafeEqual } from "node:crypto";
@@ -32,6 +31,24 @@ export async function verifyPassword(
   hash: string
 ): Promise<boolean> {
   return bcrypt.compare(password, hash);
+}
+
+export async function isUserRestricted(identifier?: string | null): Promise<boolean> {
+  if (!identifier) return false;
+  try {
+    const clean = identifier.trim().toLowerCase();
+    const record = await db
+      .select({ value: storeSettings.value })
+      .from(storeSettings)
+      .where(eq(storeSettings.key, "restricted_users"))
+      .limit(1);
+    if (!record[0] || !Array.isArray(record[0].value)) return false;
+    const restrictedList = (record[0].value as string[]).map((s) => String(s).trim().toLowerCase());
+    return restrictedList.includes(clean);
+  } catch (err) {
+    console.error("Error checking restricted user:", err);
+    return false;
+  }
 }
 
 export async function createUser(
@@ -105,6 +122,14 @@ export async function getSessionUser(): Promise<{
       .where(eq(users.id, decoded.userId))
       .limit(1);
     if (!user[0]) return null;
+
+    if (user[0].role !== "admin") {
+      const restricted = (await isUserRestricted(user[0].email)) || (await isUserRestricted(user[0].id));
+      if (restricted) {
+        return null;
+      }
+    }
+
     return {
       id: user[0].id,
       name: user[0].name,

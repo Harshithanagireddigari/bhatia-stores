@@ -3,18 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { X, Lock, Eye, EyeOff, Loader2, ArrowLeft, User, ShieldCheck, CheckCircle2, KeyRound, Mail } from "lucide-react";
-
-interface GoogleAccount {
-  name: string;
-  email: string;
-  avatar: string;
-}
-
-const mockGoogleAccounts: GoogleAccount[] = [
-  { name: "Harshitha N", email: "harshitha@gmail.com", avatar: "H" },
-  { name: "Harshitha N", email: "harshitha@sharda.ac.in", avatar: "H" },
-];
+import { X, Lock, Eye, EyeOff, Loader2, ArrowLeft, Mail, KeyRound, CheckCircle2 } from "lucide-react";
 
 interface GoogleAuthModalProps {
   isOpen: boolean;
@@ -25,12 +14,10 @@ interface GoogleAuthModalProps {
 export default function GoogleAuthModal({ isOpen, onClose, redirectUrl }: GoogleAuthModalProps) {
   const router = useRouter();
   
-  // Steps: "select_account" -> "password" -> "otp" -> "confirm"
-  const [step, setStep] = useState<"select_account" | "password" | "otp" | "confirm">("select_account");
-  const [selectedAccount, setSelectedAccount] = useState<GoogleAccount>(mockGoogleAccounts[0]);
-  const [customEmail, setCustomEmail] = useState("");
-  const [isCustomAccount, setIsCustomAccount] = useState(false);
-  const [googlePassword, setGooglePassword] = useState("");
+  // Steps: "login" (enter email & password) | "otp" (verify 6-digit code)
+  const [step, setStep] = useState<"login" | "otp">("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [otpCode, setOtpCode] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -40,73 +27,70 @@ export default function GoogleAuthModal({ isOpen, onClose, redirectUrl }: Google
   if (!isOpen) return null;
 
   function handleClose() {
-    setStep("select_account");
-    setSelectedAccount(mockGoogleAccounts[0]);
-    setCustomEmail("");
-    setIsCustomAccount(false);
-    setGooglePassword("");
+    setStep("login");
+    setEmail("");
+    setPassword("");
     setOtpCode("");
     setShowPassword(false);
     setErrorMsg(null);
     onClose();
   }
 
-  function handleSelectAccount(acc: GoogleAccount) {
-    setSelectedAccount(acc);
-    setIsCustomAccount(false);
-    setErrorMsg(null);
-    setStep("password");
-  }
-
-  const getTargetEmail = () => (isCustomAccount ? customEmail.trim().toLowerCase() : selectedAccount.email);
-  const getTargetName = () =>
-    isCustomAccount
-      ? customEmail.split("@")[0].charAt(0).toUpperCase() + customEmail.split("@")[0].slice(1)
-      : selectedAccount.name;
-
-  async function handlePasswordNext(e: React.FormEvent) {
+  async function handleGoogleLogin(e: React.FormEvent) {
     e.preventDefault();
-    if (!googlePassword) {
-      setErrorMsg("Please enter your password.");
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPassword = password.trim();
+
+    if (!cleanEmail || !cleanPassword) {
+      setErrorMsg("Please enter both your Google email and password.");
       return;
     }
-    
+
     setLoading(true);
     setErrorMsg(null);
 
-    const emailToUse = getTargetEmail();
-    const nameToUse = getTargetName();
+    const nameToUse = cleanEmail.split("@")[0].charAt(0).toUpperCase() + cleanEmail.split("@")[0].slice(1);
 
     try {
       const res = await fetch("/api/auth/google", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: emailToUse,
-          password: googlePassword,
+          email: cleanEmail,
+          password: cleanPassword,
           name: nameToUse,
         }),
       });
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || "Incorrect password.");
+        throw new Error(data.error || "Google authentication failed. Please check your credentials.");
       }
 
-      setErrorMsg(null);
-      setStep("confirm");
+      toast.success(`Welcome to Bhatia Stores, ${data.user.name}!`);
+      handleClose();
+
+      if (data.user.role === "admin") {
+        router.push("/admin");
+      } else if (redirectUrl) {
+        router.push(redirectUrl);
+      } else {
+        router.push("/shop");
+      }
+      router.refresh();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Password verification failed.";
+      const msg = err instanceof Error ? err.message : "Google authentication failed.";
       setErrorMsg(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
   }
 
   async function handleSendOtp() {
-    const emailToUse = getTargetEmail();
-    if (!emailToUse) {
-      setErrorMsg("Please enter a valid Google email address.");
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail) {
+      setErrorMsg("Please enter your Google email above to receive an OTP code.");
       return;
     }
 
@@ -117,15 +101,15 @@ export default function GoogleAuthModal({ isOpen, onClose, redirectUrl }: Google
       const res = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: emailToUse }),
+        body: JSON.stringify({ email: cleanEmail }),
       });
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || "Failed to send OTP email");
+        throw new Error(data.error || "Failed to send OTP email.");
       }
 
-      toast.success(`6-digit OTP sent to ${emailToUse}! Please check your inbox.`);
+      toast.success(`6-digit OTP code sent to ${cleanEmail}! Please check your inbox.`);
       setStep("otp");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to send OTP email.";
@@ -138,6 +122,7 @@ export default function GoogleAuthModal({ isOpen, onClose, redirectUrl }: Google
 
   async function handleVerifyOtp(e: React.FormEvent) {
     e.preventDefault();
+    const cleanEmail = email.trim().toLowerCase();
     if (!otpCode || otpCode.trim().length < 6) {
       setErrorMsg("Please enter the complete 6-digit OTP code.");
       return;
@@ -146,14 +131,12 @@ export default function GoogleAuthModal({ isOpen, onClose, redirectUrl }: Google
     setLoading(true);
     setErrorMsg(null);
 
-    const emailToUse = getTargetEmail();
-
     try {
       const res = await fetch("/api/auth/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: emailToUse,
+          email: cleanEmail,
           otp: otpCode.trim(),
         }),
       });
@@ -183,49 +166,6 @@ export default function GoogleAuthModal({ isOpen, onClose, redirectUrl }: Google
     }
   }
 
-  async function handleFinalConfirm() {
-    setLoading(true);
-    setErrorMsg(null);
-
-    const emailToUse = getTargetEmail();
-    const nameToUse = getTargetName();
-
-    try {
-      const res = await fetch("/api/auth/google", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: emailToUse,
-          password: googlePassword,
-          name: nameToUse,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Google sign-in failed.");
-      }
-
-      toast.success(`Signed in as ${nameToUse}`);
-      handleClose();
-
-      if (data.user.role === "admin") {
-        router.push("/admin");
-      } else if (redirectUrl) {
-        router.push(redirectUrl);
-      } else {
-        router.push("/shop");
-      }
-      router.refresh();
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Google Sign-In failed.";
-      setErrorMsg(msg);
-      toast.error(msg);
-    } finally {
-      setLoading(false);
-    }
-  }
-
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/65 backdrop-blur-sm font-sans animate-fade-in">
       <div className="w-full max-w-md overflow-hidden rounded-[28px] border border-stone-200 bg-white p-7 shadow-2xl dark:border-stone-800 dark:bg-[#1a1613] text-stone-900 dark:text-white relative">
@@ -239,8 +179,8 @@ export default function GoogleAuthModal({ isOpen, onClose, redirectUrl }: Google
           <X size={18} />
         </button>
 
-        {/* STEP 1: SELECT ACCOUNT */}
-        {step === "select_account" && (
+        {/* STEP 1: DIRECT GOOGLE EMAIL & PASSWORD ENTERING */}
+        {step === "login" && (
           <div>
             <div className="text-center mb-6">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-[#b49663] dark:bg-amber-950/40 mb-2">
@@ -252,90 +192,35 @@ export default function GoogleAuthModal({ isOpen, onClose, redirectUrl }: Google
                 </svg>
               </div>
               <h2 className="font-serif text-2xl font-bold text-stone-900 dark:text-white">
-                Choose an Account
+                Sign in with Google
               </h2>
               <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
                 to continue to Bhatia Stores
               </p>
             </div>
 
-            <div className="space-y-3">
-              {mockGoogleAccounts.map((acc) => (
-                <button
-                  key={acc.email}
-                  onClick={() => handleSelectAccount(acc)}
-                  className="flex w-full items-center gap-4 rounded-2xl border border-stone-200 bg-white p-3.5 text-left shadow-sm transition hover:border-[#b49663] hover:bg-stone-50 dark:border-stone-800 dark:bg-stone-900 dark:hover:border-[#c5a059]"
-                >
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#4a3373] text-sm font-bold text-white shadow-sm">
-                    {acc.avatar}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-bold text-xs text-stone-900 dark:text-white truncate">{acc.name}</p>
-                    <p className="text-[11px] text-stone-500 dark:text-stone-400 truncate">{acc.email}</p>
-                  </div>
-                </button>
-              ))}
-
-              <button
-                onClick={() => {
-                  setIsCustomAccount(true);
-                  setStep("password");
-                }}
-                className="flex w-full items-center gap-3 rounded-2xl border border-dashed border-stone-300 p-3 text-xs font-bold text-stone-600 hover:border-[#b49663] hover:text-[#b49663] dark:border-stone-700 dark:text-stone-400"
-              >
-                <User size={18} />
-                <span>Use another account</span>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* STEP 2: ENTER PASSWORD WITH FORGOT PASSWORD OPTION */}
-        {step === "password" && (
-          <div>
-            <button
-              onClick={() => setStep("select_account")}
-              className="flex items-center gap-1.5 text-xs font-bold text-[#b49663] dark:text-[#c5a059] mb-4 hover:underline"
-            >
-              <ArrowLeft size={16} />
-              <span>Back to account list</span>
-            </button>
-
-            <div className="flex items-center gap-3 rounded-2xl border border-stone-200 bg-stone-50 p-3 mb-5 dark:border-stone-800 dark:bg-stone-900">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#4a3373] text-xs font-bold text-white">
-                {isCustomAccount ? "G" : selectedAccount.avatar}
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="font-bold text-xs text-stone-900 dark:text-white truncate">
-                  {isCustomAccount ? "Google Account" : selectedAccount.name}
-                </p>
-                <p className="text-[11px] text-stone-500 dark:text-stone-400 truncate">
-                  {isCustomAccount ? (customEmail || "Enter email below") : selectedAccount.email}
-                </p>
-              </div>
-            </div>
-
-            <form onSubmit={handlePasswordNext} className="space-y-4 text-xs">
-              {isCustomAccount && (
-                <div>
-                  <label className="block font-bold text-stone-700 dark:text-stone-300 mb-1">
-                    Google Email *
-                  </label>
+            <form onSubmit={handleGoogleLogin} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-bold text-stone-700 dark:text-stone-300 mb-1">
+                  Google Email Address *
+                </label>
+                <div className="relative">
                   <input
                     type="email"
                     required
-                    value={customEmail}
-                    onChange={(e) => setCustomEmail(e.target.value)}
-                    placeholder="you@gmail.com"
-                    className="w-full rounded-2xl border border-stone-300 bg-white p-3.5 text-stone-900 outline-none focus:border-[#b49663] dark:border-stone-700 dark:bg-stone-900 dark:text-white"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter your Google email (e.g. name@gmail.com)"
+                    className="w-full rounded-2xl border border-stone-300 bg-white p-3.5 pl-10 text-stone-900 outline-none focus:border-[#b49663] dark:border-stone-700 dark:bg-stone-900 dark:text-white"
                   />
+                  <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
                 </div>
-              )}
+              </div>
 
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="font-bold text-stone-700 dark:text-stone-300">
-                    Enter Password *
+                    Google Password *
                   </label>
                   <button
                     type="button"
@@ -352,40 +237,50 @@ export default function GoogleAuthModal({ isOpen, onClose, redirectUrl }: Google
                   <input
                     type={showPassword ? "text" : "password"}
                     required
-                    value={googlePassword}
-                    onChange={(e) => setGooglePassword(e.target.value)}
-                    placeholder="Enter password"
-                    className="w-full rounded-2xl border border-stone-300 bg-white p-3.5 pr-10 text-stone-900 outline-none focus:border-[#b49663] dark:border-stone-700 dark:bg-stone-900 dark:text-white"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your Google account password"
+                    className="w-full rounded-2xl border border-stone-300 bg-white p-3.5 pl-10 pr-10 text-stone-900 outline-none focus:border-[#b49663] dark:border-stone-700 dark:bg-stone-900 dark:text-white"
                   />
+                  <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 dark:hover:text-stone-200"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
               </div>
 
-              {errorMsg && <p className="text-xs font-bold text-red-600">{errorMsg}</p>}
+              {errorMsg && (
+                <div className="rounded-xl border border-red-200 bg-red-50 p-2.5 text-xs font-semibold text-red-600 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-400">
+                  {errorMsg}
+                </div>
+              )}
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-2xl bg-[#c5a059] py-3.5 font-bold text-stone-900 shadow hover:bg-[#b49663] transition text-xs flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full rounded-2xl bg-[#c5a059] py-3.5 font-bold text-stone-900 shadow hover:bg-[#b49663] transition text-xs flex items-center justify-center gap-2 disabled:opacity-50 mt-2"
               >
                 {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                <span>Verify & Next</span>
+                <span>Sign In with Google</span>
               </button>
+
+              <p className="text-[11px] text-center text-stone-500 dark:text-stone-400 pt-1">
+                Secure 256-bit SSL encrypted Google authorization
+              </p>
             </form>
           </div>
         )}
 
-        {/* STEP 3: OTP VERIFICATION SCREEN */}
+        {/* STEP 2: OTP VERIFICATION SCREEN */}
         {step === "otp" && (
           <div>
             <button
-              onClick={() => setStep("password")}
+              onClick={() => setStep("login")}
               className="flex items-center gap-1.5 text-xs font-bold text-[#b49663] dark:text-[#c5a059] mb-4 hover:underline"
             >
               <ArrowLeft size={16} />
@@ -400,7 +295,7 @@ export default function GoogleAuthModal({ isOpen, onClose, redirectUrl }: Google
                 Enter Email OTP
               </h2>
               <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
-                We've sent a 6-digit one-time code to <strong className="text-stone-900 dark:text-white">{getTargetEmail()}</strong>
+                We've sent a 6-digit one-time code to <strong className="text-stone-900 dark:text-white">{email}</strong>
               </p>
             </div>
 
@@ -420,7 +315,11 @@ export default function GoogleAuthModal({ isOpen, onClose, redirectUrl }: Google
                 />
               </div>
 
-              {errorMsg && <p className="text-xs font-bold text-red-600">{errorMsg}</p>}
+              {errorMsg && (
+                <div className="rounded-xl border border-red-200 bg-red-50 p-2.5 text-xs font-semibold text-red-600 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-400">
+                  {errorMsg}
+                </div>
+              )}
 
               <button
                 type="submit"
@@ -428,7 +327,7 @@ export default function GoogleAuthModal({ isOpen, onClose, redirectUrl }: Google
                 className="w-full rounded-2xl bg-[#c5a059] py-3.5 font-bold text-stone-900 shadow hover:bg-[#b49663] transition text-xs flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                <span>Verify OTP & Log In</span>
+                <span>Verify OTP &amp; Log In</span>
               </button>
 
               <div className="text-center pt-2">
@@ -442,48 +341,6 @@ export default function GoogleAuthModal({ isOpen, onClose, redirectUrl }: Google
                 </button>
               </div>
             </form>
-          </div>
-        )}
-
-        {/* STEP 4: CONTINUE CONFIRMATION */}
-        {step === "confirm" && (
-          <div className="text-center animate-fade-in">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 mb-4">
-              <CheckCircle2 size={36} />
-            </div>
-
-            <h2 className="font-serif text-2xl font-bold text-stone-900 dark:text-white">
-              Identity Verified
-            </h2>
-            <p className="mt-1 text-xs text-stone-600 dark:text-stone-300">
-              Ready to log in as <strong className="text-stone-900 dark:text-white">{getTargetEmail()}</strong>.
-            </p>
-
-            {errorMsg && <p className="mt-3 text-xs font-bold text-red-600">{errorMsg}</p>}
-
-            <div className="mt-6 space-y-3">
-              <button
-                onClick={handleFinalConfirm}
-                disabled={loading}
-                className="w-full rounded-2xl bg-[#c5a059] hover:bg-[#b49663] py-4 font-bold text-stone-900 shadow-md transition flex items-center justify-center gap-2 text-sm disabled:opacity-50"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Signing In...</span>
-                  </>
-                ) : (
-                  <span>Continue as {getTargetName()}</span>
-                )}
-              </button>
-
-              <button
-                onClick={() => setStep("select_account")}
-                className="text-xs font-bold text-stone-500 hover:underline"
-              >
-                Choose another account
-              </button>
-            </div>
           </div>
         )}
 

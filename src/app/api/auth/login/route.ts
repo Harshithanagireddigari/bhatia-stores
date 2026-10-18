@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getUserByEmail, verifyPassword, setSessionCookie } from "@/lib/auth";
+import { getUserByEmail, verifyPassword, setSessionCookie, isUserRestricted } from "@/lib/auth";
 import { verifyCaptchaAnswer } from "@/lib/captcha";
 import { isRateLimited } from "@/lib/rate-limit";
 import { sanitizeEmail, detectInjectionPatterns } from "@/lib/security";
@@ -35,6 +35,16 @@ export async function POST(req: Request) {
     const valid = await verifyPassword(password, user.password);
     if (!valid) {
       return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
+    }
+
+    if (user.role !== "admin") {
+      const restricted = (await isUserRestricted(user.email)) || (await isUserRestricted(user.id));
+      if (restricted) {
+        return NextResponse.json(
+          { error: "Your access has been restricted by the store administrator. Please contact support." },
+          { status: 403 }
+        );
+      }
     }
 
     await setSessionCookie(user.id);

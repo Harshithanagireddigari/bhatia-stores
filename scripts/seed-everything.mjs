@@ -98,7 +98,7 @@ async function seedEverything() {
     ["prod_tile_01", "Matt Step & Riser Tile - Design 02", "450.00", "Floor Tiles", "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=800&auto=format&fit=crop", 18],
     ["prod_tile_02", "Wall Accent Tile - Ocean Series 03", "520.00", "Wall Tiles", "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&w=800&auto=format&fit=crop", 22],
     ["prod_basin_01", "SunCore Designer Countertop Wash Basin", "3450.00", "Wash Basins", "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&w=800&auto=format&fit=crop", 12],
-    ["prod_faucet_01", "Rose Gold Brass Luxury Tall Faucet", "2890.00", "Faucets & Taps", "https://images.unsplash.com/photo-1585758925574-d4bfa55eb5db?q=80&w=800&auto=format&fit=crop", 15],
+    ["prod_faucet_01", "Rose Gold Brass Luxury Tall Faucet", "2890.00", "Faucets & Taps", "/products/catalog/hindware-05.jpg", 15],
     ["prod_wc_01", "Italian Wall Mounted Rimless WC Suite", "8900.00", "Toilets & WC", "https://images.unsplash.com/photo-1620626011761-996317b8d101?q=80&w=800&auto=format&fit=crop", 8],
     ["prod_acc_01", "Chrome Towel Bar & Robe Hook Set", "1250.00", "Bathroom Accessories", "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=800&auto=format&fit=crop", 30],
   ];

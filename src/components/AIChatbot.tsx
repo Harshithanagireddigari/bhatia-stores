@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MessageSquare, Bot, X, Send, Sparkles, Tag, Package, Headphones, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -13,6 +13,7 @@ type Message = {
 export default function AIChatbot() {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const [hasConsent, setHasConsent] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -21,6 +22,16 @@ export default function AIChatbot() {
       text: "Hi! I'm Bhatia AI 🤖 Your Shopping Assistant. I can help you find products, check live order status, explore coupon offers, or connect with our support team!",
     },
   ]);
+
+  useEffect(() => {
+    const checkConsent = () => {
+      const consent = typeof window !== "undefined" ? localStorage.getItem("bhatia_policy_consent") : null;
+      setHasConsent(Boolean(consent));
+    };
+    checkConsent();
+    window.addEventListener("bhatia_consent_change", checkConsent);
+    return () => window.removeEventListener("bhatia_consent_change", checkConsent);
+  }, []);
 
   function handleSend(textToSend?: string) {
     const query = (textToSend || input).trim();
@@ -44,7 +55,7 @@ export default function AIChatbot() {
       } else if (lower.includes("offer") || lower.includes("coupon") || lower.includes("discount")) {
         aiText = "🎉 Current active offers: Use WELCOME10 for 10% OFF on your first order (min. ₹2,000), or BATH500 for ₹500 OFF on bathroom tiles!";
       } else if (lower.includes("human") || lower.includes("support") || lower.includes("call")) {
-        aiText = "You can talk to our hardware support team on WhatsApp at +91 91204 35950 or email us at bhatiasanitaryware@gmail.com!";
+        aiText = "You can talk to our hardware support team on WhatsApp at +91 91204 35950 or email us at info@bhatiastores.com!";
       }
 
       const aiMsg: Message = { id: `ai_${Date.now()}`, sender: "ai", text: aiText };
@@ -52,13 +63,16 @@ export default function AIChatbot() {
     }, 800);
   }
 
+  if (!hasConsent) return null;
+
   return (
-    <div className="fixed bottom-20 right-4 z-50 font-sans md:bottom-6 md:right-6">
+    <div className="fixed bottom-20 right-4 z-40 font-sans md:bottom-6 md:right-6">
       {/* Floating Toggle Button */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="flex items-center gap-2.5 rounded-full bg-gradient-to-r from-[#b49663] to-[#8c7143] px-5 py-3.5 text-xs font-bold text-white shadow-2xl transition hover:scale-105 active:scale-95"
+          aria-label="Open Bhatia AI Assistant"
+          className="flex min-h-[48px] min-w-[48px] items-center gap-2.5 rounded-full bg-gradient-to-r from-[#b49663] to-[#8c7143] px-5 py-3 text-xs font-bold text-white shadow-2xl transition hover:scale-105 active:scale-95"
         >
           <div className="relative">
             <Bot size={20} />

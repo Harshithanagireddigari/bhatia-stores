@@ -25,12 +25,20 @@ export default function ProductCard({ product }: Props) {
   const { toggleItem, hasItem } = useWishlist();
   const [quickViewId, setQuickViewId] = useState<string | null>(null);
 
+  const initialImage =
+    product.image &&
+    !product.image.includes("broken") &&
+    !product.image.includes("photo-1585758925574-d4bfa55eb5db")
+      ? product.image
+      : "/products/catalog/hindware-05.jpg";
+  const [imgSrc, setImgSrc] = useState(initialImage);
+
   const handleAddToCart = () => {
     addItem({
       productId: product.id,
       name: product.name,
       price: parseFloat(product.price.replace(/[^0-9.]/g, "")),
-      image: product.image,
+      image: imgSrc,
       quantity: 1,
     });
   };
@@ -41,11 +49,12 @@ export default function ProductCard({ product }: Props) {
         <div className="relative aspect-square overflow-hidden rounded-xl bg-stone-50 dark:bg-stone-950">
           <Link href={`/product/${product.id}`} className="block w-full h-full">
             <Image
-              src={product.image}
+              src={imgSrc}
               alt={product.name}
               fill
               sizes="(max-width: 639px) 48vw, (max-width: 1023px) 33vw, 25vw"
               loading="lazy"
+              onError={() => setImgSrc("/products/catalog/hindware-05.jpg")}
               className="object-cover transition-transform duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1)] group-hover:scale-105"
             />
           </Link>

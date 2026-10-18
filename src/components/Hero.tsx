@@ -47,7 +47,7 @@ export default function Hero({ slides = [] }: { slides?: HeroSlide[] }) {
             <source src={active.imageUrl} />
           </video>
         ) : (
-          <Image src={heroImage} alt={active.heading} fill priority sizes="100vw" quality={75} className="scale-105 object-cover opacity-85" />
+          <Image src={heroImage} alt={active.heading} fill priority loading="eager" fetchPriority="high" sizes="100vw" quality={75} className="scale-105 object-cover opacity-85" />
         )}
         <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-black/30" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/30" />

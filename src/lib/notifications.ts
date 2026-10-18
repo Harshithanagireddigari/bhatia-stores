@@ -29,6 +29,7 @@ export async function notifyAdmin({ type, title, message, link, details }: Notif
     const resendApiKey = process.env.RESEND_API_KEY;
     if (resendApiKey) {
       try {
+        const from = process.env.EMAIL_FROM || "Bhatia Stores <info@bhatiastores.com>";
         await fetch("https://api.resend.com/emails", {
           method: "POST",
           headers: {
@@ -36,7 +37,7 @@ export async function notifyAdmin({ type, title, message, link, details }: Notif
             Authorization: `Bearer ${resendApiKey}`,
           },
           body: JSON.stringify({
-            from: "The Bhatias Alerts <notifications@bhatia-stores.com>",
+            from,
             to: [adminEmail],
             subject: `[Bhatia Stores Alert] ${title}`,
             html: `

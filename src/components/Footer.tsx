@@ -3,7 +3,7 @@ import Image from "next/image";
 import { ArrowUpRight, Mail, MessageCircle, Phone, ShieldCheck } from "lucide-react";
 
 const supportPhone = "+91 91204 35950";
-const supportEmail = "bhatiasanitaryware@gmail.com";
+const supportEmail = "info@bhatiastores.com";
 
 export default function Footer() {
   return (

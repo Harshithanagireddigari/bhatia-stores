@@ -86,3 +86,18 @@ export async function PATCH(
 
   return NextResponse.json(targetOrder);
 }
+
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const user = await getSessionUser();
+  if (!user || user.role !== "admin") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+  }
+
+  const { id } = await params;
+  await db.delete(orders).where(eq(orders.id, id));
+
+  return NextResponse.json({ success: true, message: "Order deleted successfully" });
+}

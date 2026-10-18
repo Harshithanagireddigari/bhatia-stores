@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import type { Metadata } from "next";
 import { unstable_cache } from "next/cache";
 import { and, asc, desc, eq } from "drizzle-orm";
 import { ArrowRight, Headphones, ShieldCheck, Tag, Truck } from "lucide-react";
@@ -9,13 +10,18 @@ import Hero from "@/components/Hero";
 import DeferredOffersSection from "@/components/DeferredOffersSection";
 import AnimatedCategorySection from "@/components/AnimatedCategorySection";
 
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
+
 export const revalidate = 300;
 
 const isCleanImageUrl = (url: unknown): url is string =>
   typeof url === "string" &&
   url.trim().length > 0 &&
   !url.startsWith("data:") &&
-  !url.includes("broken");
+  !url.includes("broken") &&
+  !url.includes("photo-1585758925574-d4bfa55eb5db");
 
 const getHomePageData = unstable_cache(
   () => Promise.all([
@@ -60,7 +66,9 @@ export default async function HomePage() {
     return emptyHomePageData;
   });
 
-  const productImages = latestProducts.map((product) => product.image).filter(isCleanImageUrl);
+  const productImages = latestProducts
+    .map((product) => (isCleanImageUrl(product.image) ? product.image : "/products/catalog/hindware-05.jpg"))
+    .filter(isCleanImageUrl);
 
   const fallbackCategoryImages: Record<string, string> = {
     "floor-tiles": "/products/catalog/suncore-matt-01.jpg",
@@ -80,14 +88,14 @@ export default async function HomePage() {
         name: cat.name,
         subtitle: cat.description || `Explore ${cat.name}`,
         slug: cat.slug,
-        image: (isCleanImageUrl(cat.image) ? cat.image : null) || fallbackCategoryImages[cat.slug] || productImages[idx % productImages.length] || "",
+        image: (isCleanImageUrl(cat.image) ? cat.image : null) || fallbackCategoryImages[cat.slug] || productImages[idx % productImages.length] || "/products/catalog/hindware-05.jpg",
       }))
     : defaultCategories.map((def, idx) => ({
         id: def.slug,
         name: def.name,
         subtitle: def.subtitle,
         slug: def.slug,
-        image: fallbackCategoryImages[def.slug] || productImages[idx % productImages.length] || "",
+        image: fallbackCategoryImages[def.slug] || productImages[idx % productImages.length] || "/products/catalog/hindware-05.jpg",
       }));
 
   return (

@@ -23,7 +23,7 @@ function escapeHtml(value: string) {
 
 async function sendEmail(to: string, subject: string, html: string, text: string) {
   const apiKey = process.env.RESEND_API_KEY;
-  let from = process.env.EMAIL_FROM || "Bhatia Stores <onboarding@resend.dev>";
+  let from = process.env.EMAIL_FROM || "Bhatia Stores <info@bhatiastores.com>";
   
   if (from.includes("@gmail.com")) {
     from = "Bhatia Stores <onboarding@resend.dev>";
@@ -35,11 +35,22 @@ async function sendEmail(to: string, subject: string, html: string, text: string
   }
 
   try {
-    const response = await fetch("https://api.resend.com/emails", {
+    let response = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({ from, to: [to], subject, html, text }),
     });
+
+    // If sending from custom domain fails because it is unverified in Resend sandbox, fall back to onboarding@resend.dev
+    if (!response.ok && response.status === 403 && from !== "Bhatia Stores <onboarding@resend.dev>") {
+      console.warn(`Resend domain not yet verified for ${from}, attempting fallback via onboarding@resend.dev`);
+      response = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ from: "Bhatia Stores <onboarding@resend.dev>", to: [to], subject, html, text }),
+      });
+    }
+
     if (!response.ok) {
       const errText = await response.text();
       console.error(`Resend email error to ${to} (${response.status}): ${errText}`);
@@ -49,6 +60,15 @@ async function sendEmail(to: string, subject: string, html: string, text: string
   } catch (error) {
     console.error(`Failed to send email to ${to}:`, error);
   }
+}
+
+export function getAdminNotificationEmails(): string[] {
+  const envEmails = process.env.ORDER_NOTIFICATION_EMAIL
+    ? process.env.ORDER_NOTIFICATION_EMAIL.split(",").map((e) => e.trim()).filter(Boolean)
+    : [];
+
+  const defaults = ["info@bhatiastores.com", "harshithanagireddigari@gmail.com"];
+  return Array.from(new Set([...envEmails, ...defaults]));
 }
 
 export async function sendPasswordResetEmail({ to, name, resetUrl }: { to: string; name: string; resetUrl: string }) {
@@ -161,8 +181,8 @@ export async function sendLowStockAlertEmail(product: {
   image?: string;
   price?: string | number;
 }) {
-  const adminEmail = process.env.ORDER_NOTIFICATION_EMAIL || "harshithanagireddigari@gmail.com";
-  if (!adminEmail) return;
+  const adminEmails = getAdminNotificationEmails();
+  if (adminEmails.length === 0) return;
 
   const dateStr = new Date().toLocaleDateString("en-IN", {
     day: "numeric",
@@ -290,7 +310,9 @@ export async function sendLowStockAlertEmail(product: {
 
   const text = `Low Stock Alert – The Bhatias Store\n\nProduct: ${product.name} (SKU: BT-${shortId})\nCurrent Stock: ${product.stock} (Threshold: 10)\n\nPlease check and restock to avoid out-of-stock situations.\nView in Admin Panel: https://bhatia-stores.vercel.app/admin/products`;
 
-  await sendEmail(adminEmail, `⚠️ Low Stock Alert – ${product.name} (Stock: ${product.stock})`, html, text);
+  for (const email of adminEmails) {
+    await sendEmail(email, `⚠️ Low Stock Alert – ${product.name} (Stock: ${product.stock})`, html, text);
+  }
 }
 
 function buildCustomerOrderHtml(order: OrderEmail) {
@@ -536,7 +558,7 @@ function buildAdminOrderHtml(order: OrderEmail) {
 }
 
 export async function sendOrderNotifications(order: OrderEmail) {
-  const adminEmail = process.env.ORDER_NOTIFICATION_EMAIL || "harshithanagireddigari@gmail.com";
+  const adminEmails = getAdminNotificationEmails();
   const shortId = order.id.slice(0, 8).toUpperCase();
   const payment = order.paymentMethod === "cod" ? "Cash on Delivery" : "Prepaid";
 
@@ -555,8 +577,10 @@ export async function sendOrderNotifications(order: OrderEmail) {
     await sendEmail(order.customerEmail, `Thank You for Your Order! #TBH${shortId}`, customerHtml, customerText);
   }
 
-  // Always send store owner notification email
-  if (adminEmail && adminEmail !== order.customerEmail) {
-    await sendEmail(adminEmail, `New Order Received! #TBH${shortId}`, adminHtml, adminText);
+  // Always send store owner notification email to all admin automailing recipients
+  for (const adminEmail of adminEmails) {
+    if (adminEmail && adminEmail.toLowerCase() !== order.customerEmail?.toLowerCase()) {
+      await sendEmail(adminEmail, `New Order Received! #TBH${shortId}`, adminHtml, adminText);
+    }
   }
 }
