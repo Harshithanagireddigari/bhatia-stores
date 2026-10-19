@@ -49,6 +49,19 @@ export default function AdminCustomersPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
+  async function deleteCustomer(id: string, name: string) {
+    if (!confirm(`Are you sure you want to delete customer "${name}"? This will remove their account and session data. This cannot be undone.`)) return;
+    try {
+      const res = await fetch(`/api/admin/customers/${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to delete customer");
+      toast.success(`Customer "${name}" deleted successfully`);
+      setCustomers((prev) => prev.filter((c) => c.id !== id));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete customer");
+    }
+  }
+
   async function loadAllData(silent = false) {
     try {
       const [insightsRes, restrictRes, visitorsRes] = await Promise.all([
@@ -370,12 +383,13 @@ export default function AdminCustomersPage() {
                     <th className="px-6 py-4">Role</th>
                     <th className="px-6 py-4">Access & Restriction</th>
                     <th className="px-6 py-4">Joined Date</th>
+                    <th className="px-6 py-4">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                   {loading ? (
                     <tr>
-                      <td colSpan={7} className="p-8 text-center text-gray-500">
+                      <td colSpan={8} className="p-8 text-center text-gray-500">
                         Loading customer records...
                       </td>
                     </tr>
@@ -492,12 +506,26 @@ export default function AdminCustomersPage() {
                               <span>{new Date(c.createdAt).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}</span>
                             </div>
                           </td>
+
+                          {/* Delete Action */}
+                          <td className="px-6 py-4">
+                            {c.role !== "admin" && (
+                              <button
+                                type="button"
+                                onClick={() => deleteCustomer(c.id, c.name)}
+                                className="inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-3 py-1.5 text-[11px] font-semibold text-red-600 transition hover:bg-red-100 dark:bg-red-950/40 dark:text-red-400 dark:hover:bg-red-950/60"
+                              >
+                                <Trash2 size={13} />
+                                Delete
+                              </button>
+                            )}
+                          </td>
                         </tr>
                       );
                     })
                   ) : (
                     <tr>
-                      <td colSpan={7} className="p-8 text-center text-gray-500">
+                      <td colSpan={8} className="p-8 text-center text-gray-500">
                         No customer accounts matching "{search}".
                       </td>
                     </tr>
